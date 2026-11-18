@@ -1,0 +1,92 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d94d356806b4db34faf29d66a54a661a, type: 3}
+  m_Name: Car_SNA-LM
+  m_EditorClassIdentifier: 
+  displayName: Senna LM
+  chassisCode: SNA-LM
+  inspiredBy: McLaren Senna
+  carClass: 1
+  description: "\u041C\u0430\u043A\u0441\u0438\u043C\u0443\u043C \u043F\u0440\u0438\u0436\u0438\u043C\u0430
+    \u0438 \u0441\u0446\u0435\u043F\u043B\u0435\u043D\u0438\u044F. \u0421\u0430\u043C\u0430\u044F
+    \u043B\u0451\u0433\u043A\u0430\u044F \u0438 \u0441\u0430\u043C\u0430\u044F \u0445\u0440\u0443\u043F\u043A\u0430\u044F."
+  bodyColor: {r: 1, g: 0.5, b: 0, a: 1}
+  statSpeed: 4
+  statAcceleration: 4
+  statHandling: 5
+  statToughness: 1
+  maxSpeedKmh: 335
+  acceleration: 26
+  accelerationCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.6
+      value: 0.7
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0.2
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  launchBoost: 0.3
+  brakeDeceleration: 38
+  reverseMaxSpeedKmh: 60
+  coastDrag: 0.25
+  steerRateLowSpeed: 132
+  steerRateHighSpeed: 78
+  steerResponse: 14
+  grip: 15
+  downforce: 12
+  driftPower: 75
+  driftSteerRange: 0.55
+  driftGrip: 2.8
+  driftSpeedRetention: 0.82
+  driftMinSpeedKmh: 55
+  suspensionLength: 0.5
+  wheelRadius: 0.35
+  springStrength: 38
+  springDamper: 2.6
+  extraAirGravity: 12
+  airStabilization: 14
+  airAngularDamping: 4
+  airYawControl: 3
+  landingAlignSpeed: 12
+  landingAlignTime: 0.35
+  mass: 1200
+  ramPower: 0.75
+  durability: 75
+  armor: 0
+  nitroCapacityPerBar: 90
+  nitroChargeMultiplier: 1.2
+  nitroForceMultiplier: 1.05

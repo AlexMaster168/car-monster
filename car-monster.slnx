@@ -1,0 +1,5 @@
+﻿<Solution>
+  <Project Path="CarMonster.Gameplay.csproj" />
+  <Project Path="CarMonster.Editor.csproj" />
+  <Project Path="CarMonster.Tests.PlayMode.csproj" />
+</Solution>

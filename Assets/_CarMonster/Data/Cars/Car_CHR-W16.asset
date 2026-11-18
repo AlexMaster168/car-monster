@@ -1,0 +1,92 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d94d356806b4db34faf29d66a54a661a, type: 3}
+  m_Name: Car_CHR-W16
+  m_EditorClassIdentifier: 
+  displayName: Molsheim W16
+  chassisCode: CHR-W16
+  inspiredBy: Bugatti Chiron
+  carClass: 4
+  description: "\u041A\u043E\u0440\u043E\u043B\u044C \u043C\u0430\u043A\u0441\u0438\u043C\u0430\u043B\u043A\u0438
+    (380). \u0422\u044F\u0436\u0451\u043B\u044B\u0439, \u0432 \u043F\u043E\u0432\u043E\u0440\u043E\u0442\u044B
+    \u0437\u0430\u0445\u043E\u0434\u0438\u0442 \u043A\u0430\u043A \u0442\u0430\u043D\u043A\u0435\u0440."
+  bodyColor: {r: 0.05, g: 0.15, b: 0.55, a: 1}
+  statSpeed: 5
+  statAcceleration: 4
+  statHandling: 2
+  statToughness: 4
+  maxSpeedKmh: 380
+  acceleration: 26
+  accelerationCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.6
+      value: 0.7
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0.2
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  launchBoost: 0.5
+  brakeDeceleration: 38
+  reverseMaxSpeedKmh: 60
+  coastDrag: 0.25
+  steerRateLowSpeed: 100
+  steerRateHighSpeed: 50
+  steerResponse: 14
+  grip: 11
+  downforce: 12
+  driftPower: 70
+  driftSteerRange: 0.55
+  driftGrip: 2.7
+  driftSpeedRetention: 0.85
+  driftMinSpeedKmh: 55
+  suspensionLength: 0.5
+  wheelRadius: 0.35
+  springStrength: 38
+  springDamper: 2.6
+  extraAirGravity: 12
+  airStabilization: 14
+  airAngularDamping: 4
+  airYawControl: 3
+  landingAlignSpeed: 12
+  landingAlignTime: 0.35
+  mass: 1995
+  ramPower: 1.3
+  durability: 125
+  armor: 0.2
+  nitroCapacityPerBar: 110
+  nitroChargeMultiplier: 0.9
+  nitroForceMultiplier: 1.2

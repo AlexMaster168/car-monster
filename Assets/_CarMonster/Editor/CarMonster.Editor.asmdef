@@ -1,0 +1,26 @@
+{
+    "name": "CarMonster.Editor",
+    "rootNamespace": "CarMonster.EditorTools",
+    "references": [
+        "CarMonster.Gameplay",
+        "Unity.Cinemachine",
+        "Cinemachine"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.cinemachine",
+            "expression": "3.0.0",
+            "define": "CINEMACHINE_3"
+        }
+    ],
+    "noEngineReferences": false
+}

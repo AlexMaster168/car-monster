@@ -1,0 +1,91 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a64fd14ab3ec8df418fc2ed629ba2a1c, type: 3}
+  m_Name: GameBalance
+  m_EditorClassIdentifier: 
+  nitro:
+    boostDurationPerBar: 1.8
+    boostAccelMultiplier: 1.8
+    boostSpeedBonusKmh: 55
+    greenZoneStart: 0.62
+    greenZoneEnd: 0.84
+    perfectAccelMultiplier: 2.5
+    perfectSpeedBonusKmh: 85
+    perfectImpulse: 7
+    perfectChainBonus: 0.15
+    chargePerDriftSecond: 22
+    chargePerAirSecond: 30
+    minAirtime: 0.45
+    nearMissCharge: 18
+    nearMissRadius: 4.2
+    nearMissMinRelativeSpeedKmh: 50
+    nearMissCooldown: 1.2
+    racerMask:
+      serializedVersion: 2
+      m_Bits: 4294967295
+  combat:
+    minImpactSpeedKmh: 18
+    highSpeedImpactKmh: 85
+    damagePerKmh: 0.9
+    massInfluence: 0.7
+    weakHitMultiplier: 0.12
+    nitroDamageMultiplier: 1.8
+    perfectNitroDamageMultiplier: 2.3
+    sideHitMultiplier: 1.5
+    minAttackFrontness: 0.2
+    partDetachDamage: 25
+    partEjectSpeed: 9
+    knockoutLaunchSpeed: 8
+    takedownTimeBonus: 5
+    takedownNitroReward: 100
+    hitstopFreezeDuration: 0.06
+    slowMoDuration: 0.8
+    slowMoTimeScale: 0.2
+    respawnInvulnerability: 2
+  timeAttack:
+    startTime: 45
+    checkpointTimeBonus: 7
+    laps: 3
+    countdownDuration: 3
+    respawnDelay: 3
+    respawnBackOffset: 8
+    respawnClearRadius: 2.8
+    killY: -30
+  ai:
+    lookaheadBase: 8
+    lookaheadPerMs: 0.35
+    steerAngleFull: 28
+    cornerSpeedKmh: 140
+    hardCornerAngle: 70
+    driftCornerAngle: 40
+    straightAngle: 8
+    avoidRayLength: 10
+    avoidRayPerMs: 0.35
+    avoidStrength: 1.1
+    obstacleMask:
+      serializedVersion: 2
+      m_Bits: 4294967295
+    attackRange: 35
+    nitroCooldown: 2.5
+    stuckTime: 2
+    reverseTime: 1.2
+  cameraFx:
+    baseFov: 60
+    maxSpeedFov: 78
+    nitroFovBonus: 8
+    perfectFovBonus: 6
+    fovLerpSpeed: 5
+    shakePerDamage: 0.03
+    maxShake: 1.6
+    landingShakePerSecondAir: 0.35
+    takedownShake: 1.2
+    takedownFocusHold: 0.35
