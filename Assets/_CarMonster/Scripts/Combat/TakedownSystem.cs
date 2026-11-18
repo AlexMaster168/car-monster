@@ -115,18 +115,39 @@ namespace CarMonster
             float nitroMultiplier = nitro ? (Nitro.IsPerfectBoost ? c.perfectNitroDamageMultiplier : c.nitroDamageMultiplier) : 1f;
             bool combatHit = nitro || closingKmh >= c.highSpeedImpactKmh;
 
+            // Ковш: удар лбом бронемашины всегда боевой и усиленный.
+            bool plowHit = Car.Data.hasRamPlow && frontness > 0.5f;
+            if (plowHit) combatHit = true;
+
             float damage = closingKmh * c.damagePerKmh * Car.Data.ramPower * massMultiplier * angleMultiplier * nitroMultiplier;
+            if (plowHit) damage *= Car.Data.plowDamageMultiplier;
             if (!combatHit) damage *= c.weakHitMultiplier;
 
             victim.ReceiveHit(this, damage, contact.point, toVictim, combatHit);
+
+            if (plowHit && !victim.IsWrecked)
+            {
+                // Ковш отпихивает жертву вперёд-вбок с трассы.
+                Vector3 shoveDir = (toVictim + Vector3.up * 0.25f).normalized;
+                float shove = Car.Data.plowShoveSpeed * Mathf.Clamp01(closingKmh / 120f);
+                theirBody.AddForce(shoveDir * shove, ForceMode.VelocityChange);
+            }
         }
 
-        /// <summary>Нанести урон. Публичный, чтобы его могли вызывать ловушки/взрывы трассы.</summary>
+        /// <summary>Удар пришёлся в ковш (атакующий спереди этой машины).</summary>
+        public bool IsPlowFacing(Vector3 hitDirection) =>
+            Car.Data.hasRamPlow && Vector3.Dot(transform.forward, -hitDirection) > 0.5f;
+
+        /// <summary>
+        /// Нанести урон. direction — направление удара (от атакующего к этой машине).
+        /// Публичный, чтобы его могли вызывать ловушки/взрывы трассы.
+        /// </summary>
         public void ReceiveHit(TakedownSystem attacker, float rawDamage, Vector3 point, Vector3 direction, bool heavy)
         {
             if (IsWrecked || IsInvulnerable) return;
 
             float damage = rawDamage * (1f - Car.Data.armor);
+            if (IsPlowFacing(direction)) damage *= 1f - Car.Data.plowFrontalArmor;
             if (damage <= 0f) return;
 
             Health -= damage;

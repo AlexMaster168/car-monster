@@ -83,6 +83,14 @@ namespace CarMonster
             _nitro = car != null ? car.GetComponent<NitroSystem>() : null;
             _takedown = car != null ? car.GetComponent<TakedownSystem>() : null;
             if (target != null && isActiveAndEnabled) target.Landed += OnLanded;
+#if CINEMACHINE_3 || CINEMACHINE_2
+            if (followCamera != null && car != null)
+            {
+                followCamera.Follow = car.transform;
+                followCamera.LookAt = car.transform;
+                followCamera.PreviousStateIsValid = false;
+            }
+#endif
         }
 
         private void LateUpdate()

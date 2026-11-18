@@ -1,0 +1,110 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d94d356806b4db34faf29d66a54a661a, type: 3}
+  m_Name: Car_NVR-EV
+  m_EditorClassIdentifier: 
+  displayName: Volt Nevera
+  chassisCode: NVR-EV
+  inspiredBy: Rimac Nevera
+  carClass: 4
+  description: "\u0427\u0435\u0442\u044B\u0440\u0435 \u044D\u043B\u0435\u043A\u0442\u0440\u043E\u043C\u043E\u0442\u043E\u0440\u0430:
+    \u0441\u0442\u0430\u0440\u0442 \u043A\u0430\u043A \u0438\u0437 \u043F\u0443\u0448\u043A\u0438
+    \u0438 \u0442\u044F\u0436\u0451\u043B\u044B\u0439 \u0442\u0430\u0440\u0430\u043D."
+  bodyColor: {r: 0.2, g: 0.25, b: 0.35, a: 1}
+  statSpeed: 5
+  statAcceleration: 5
+  statHandling: 3
+  statToughness: 4
+  tier: 2
+  price: 125000
+  prefab: {fileID: 5942918183487774945, guid: fd77e2ee8565b384088f14e3f0ea99b1, type: 3}
+  maxSpeedKmh: 355
+  acceleration: 34
+  accelerationCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.6
+      value: 0.7
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0.2
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  launchBoost: 2
+  brakeDeceleration: 38
+  reverseMaxSpeedKmh: 60
+  coastDrag: 0.25
+  steerRateLowSpeed: 115
+  steerRateHighSpeed: 60
+  steerResponse: 14
+  grip: 12.5
+  downforce: 12
+  driftPower: 75
+  driftSteerRange: 0.55
+  driftGrip: 2.6
+  driftSpeedRetention: 0.86
+  driftMinSpeedKmh: 55
+  suspensionLength: 0.5
+  wheelRadius: 0.35
+  springStrength: 38
+  springDamper: 2.6
+  extraAirGravity: 12
+  airStabilization: 14
+  airAngularDamping: 4
+  airYawControl: 3
+  landingAlignSpeed: 12
+  landingAlignTime: 0.35
+  mass: 2300
+  ramPower: 1.4
+  durability: 115
+  armor: 0.15
+  nitroCapacityPerBar: 100
+  nitroChargeMultiplier: 0.95
+  nitroForceMultiplier: 1
+  hasRamPlow: 0
+  plowDamageMultiplier: 1.6
+  plowFrontalArmor: 0.6
+  plowShoveSpeed: 7
+  engineSound:
+    type: 8
+    idleRpm: 900
+    redlineRpm: 21000
+    gears: 1
+    brightness: 0.8
+    roughness: 0
+    turbo: 0
+    backfire: 0
+    pitch: 1.1
+    volume: 1

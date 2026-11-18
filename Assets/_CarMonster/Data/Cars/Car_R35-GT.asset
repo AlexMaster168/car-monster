@@ -25,6 +25,9 @@ MonoBehaviour:
   statAcceleration: 4
   statHandling: 4
   statToughness: 3
+  tier: 0
+  price: 0
+  prefab: {fileID: 9047805122256603739, guid: 8c1b128e6bd996e44b06bb838a89e2d8, type: 3}
   maxSpeedKmh: 325
   acceleration: 25
   accelerationCurve:
@@ -91,3 +94,18 @@ MonoBehaviour:
   nitroCapacityPerBar: 90
   nitroChargeMultiplier: 1.35
   nitroForceMultiplier: 1
+  hasRamPlow: 0
+  plowDamageMultiplier: 1.6
+  plowFrontalArmor: 0.6
+  plowShoveSpeed: 7
+  engineSound:
+    type: 3
+    idleRpm: 900
+    redlineRpm: 7100
+    gears: 6
+    brightness: 0.5
+    roughness: 0.2
+    turbo: 0.8
+    backfire: 0.6
+    pitch: 1
+    volume: 1

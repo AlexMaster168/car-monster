@@ -1,0 +1,111 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d94d356806b4db34faf29d66a54a661a, type: 3}
+  m_Name: Car_HMR-EV
+  m_EditorClassIdentifier: 
+  displayName: Rhino EV
+  chassisCode: HMR-EV
+  inspiredBy: "GMC Hummer EV (\u0431\u0440\u043E\u043D\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0439)"
+  carClass: 5
+  description: "\u042D\u043B\u0435\u043A\u0442\u0440\u043E-\u0431\u0440\u043E\u043D\u0435\u043F\u0438\u043A\u0430\u043F:
+    \u0442\u0438\u0445\u0438\u0439, \u0442\u044F\u0436\u0451\u043B\u044B\u0439 \u0438
+    \u043C\u0433\u043D\u043E\u0432\u0435\u043D\u043D\u043E \u0440\u0430\u0437\u0433\u043E\u043D\u044F\u0435\u0442\u0441\u044F
+    \u043F\u0440\u044F\u043C\u043E \u0432 \u0431\u043E\u0440\u0442 \u0441\u043E\u043F\u0435\u0440\u043D\u0438\u043A\u0443."
+  bodyColor: {r: 0.86, g: 0.86, b: 0.82, a: 1}
+  statSpeed: 2
+  statAcceleration: 4
+  statHandling: 2
+  statToughness: 5
+  tier: 3
+  price: 200000
+  prefab: {fileID: 1125214243257645848, guid: eb8bc172a64db9c4cbc9742b54d911f0, type: 3}
+  maxSpeedKmh: 250
+  acceleration: 26
+  accelerationCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.6
+      value: 0.7
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0.2
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  launchBoost: 1.8
+  brakeDeceleration: 38
+  reverseMaxSpeedKmh: 60
+  coastDrag: 0.25
+  steerRateLowSpeed: 95
+  steerRateHighSpeed: 46
+  steerResponse: 14
+  grip: 10
+  downforce: 12
+  driftPower: 60
+  driftSteerRange: 0.55
+  driftGrip: 3
+  driftSpeedRetention: 0.78
+  driftMinSpeedKmh: 55
+  suspensionLength: 0.6
+  wheelRadius: 0.48
+  springStrength: 38
+  springDamper: 2.6
+  extraAirGravity: 12
+  airStabilization: 14
+  airAngularDamping: 4
+  airYawControl: 3
+  landingAlignSpeed: 12
+  landingAlignTime: 0.35
+  mass: 4100
+  ramPower: 2.3
+  durability: 280
+  armor: 0.5
+  nitroCapacityPerBar: 120
+  nitroChargeMultiplier: 0.85
+  nitroForceMultiplier: 1
+  hasRamPlow: 1
+  plowDamageMultiplier: 1.7
+  plowFrontalArmor: 0.6
+  plowShoveSpeed: 10
+  engineSound:
+    type: 8
+    idleRpm: 900
+    redlineRpm: 14000
+    gears: 1
+    brightness: 0.35
+    roughness: 0
+    turbo: 0
+    backfire: 0
+    pitch: 0.6
+    volume: 1

@@ -1,0 +1,112 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d94d356806b4db34faf29d66a54a661a, type: 3}
+  m_Name: Car_R34-GT
+  m_EditorClassIdentifier: 
+  displayName: Skyline R34
+  chassisCode: R34-GT
+  inspiredBy: Nissan Skyline GT-R (R34)
+  carClass: 0
+  description: "\u041B\u0435\u0433\u0435\u043D\u0434\u0430 \u0434\u0440\u0438\u0444\u0442\u0430:
+    \u0440\u044F\u0434\u043D\u0430\u044F \u0448\u0435\u0441\u0442\u0451\u0440\u043A\u0430
+    \u0441 \u0442\u0443\u0440\u0431\u0438\u043D\u043E\u0439, \u0441\u0430\u043C\u044B\u0439
+    \u0434\u043B\u0438\u043D\u043D\u044B\u0439 \u0437\u0430\u043D\u043E\u0441 \u0432
+    \u0438\u0433\u0440\u0435."
+  bodyColor: {r: 0.15, g: 0.3, b: 0.85, a: 1}
+  statSpeed: 2
+  statAcceleration: 3
+  statHandling: 5
+  statToughness: 3
+  tier: 0
+  price: 15000
+  prefab: {fileID: 2333136331361484054, guid: e56b920ae097efc49869be10ce493fe8, type: 3}
+  maxSpeedKmh: 290
+  acceleration: 22
+  accelerationCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.6
+      value: 0.7
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0.2
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  launchBoost: 0.3
+  brakeDeceleration: 38
+  reverseMaxSpeedKmh: 60
+  coastDrag: 0.25
+  steerRateLowSpeed: 135
+  steerRateHighSpeed: 68
+  steerResponse: 14
+  grip: 10
+  downforce: 12
+  driftPower: 110
+  driftSteerRange: 0.55
+  driftGrip: 1.5
+  driftSpeedRetention: 0.93
+  driftMinSpeedKmh: 55
+  suspensionLength: 0.5
+  wheelRadius: 0.35
+  springStrength: 38
+  springDamper: 2.6
+  extraAirGravity: 12
+  airStabilization: 14
+  airAngularDamping: 4
+  airYawControl: 3
+  landingAlignSpeed: 12
+  landingAlignTime: 0.35
+  mass: 1560
+  ramPower: 0.95
+  durability: 95
+  armor: 0.1
+  nitroCapacityPerBar: 85
+  nitroChargeMultiplier: 1.5
+  nitroForceMultiplier: 1
+  hasRamPlow: 0
+  plowDamageMultiplier: 1.6
+  plowFrontalArmor: 0.6
+  plowShoveSpeed: 7
+  engineSound:
+    type: 1
+    idleRpm: 900
+    redlineRpm: 8000
+    gears: 6
+    brightness: 0.55
+    roughness: 0.15
+    turbo: 1
+    backfire: 0.8
+    pitch: 1
+    volume: 1

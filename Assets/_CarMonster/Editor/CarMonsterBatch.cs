@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
@@ -14,11 +15,8 @@ namespace CarMonster.EditorTools
         private const string BuildPath = "Builds/Windows/CarMonster.exe";
         private const string ScreenshotFolder = "Docs/screenshots";
 
-        /// <summary>Собрать демо-сцену и ростер (CI / первый запуск).</summary>
-        public static void BuildDemoScene()
-        {
-            DemoSceneBuilder.Build();
-        }
+        /// <summary>Собрать ростер, префабы и сцены всех локаций.</summary>
+        public static void BuildDemoScene() => DemoSceneBuilder.Build();
 
         [MenuItem("Car Monster/Build Windows Player", priority = 20)]
         public static void BuildWindowsMenu() => BuildWindows();
@@ -27,11 +25,15 @@ namespace CarMonster.EditorTools
         public static void BuildWindows()
         {
             if (!File.Exists(DemoSceneBuilder.ScenePath)) DemoSceneBuilder.Build();
+            ApplyPlayerSettings();
 
-            PlayerSettings.productName = "Car Monster";
+            var scenes = new List<string>();
+            foreach (EditorBuildSettingsScene s in EditorBuildSettings.scenes)
+                if (s.enabled && File.Exists(s.path)) scenes.Add(s.path);
+
             var options = new BuildPlayerOptions
             {
-                scenes = new[] { DemoSceneBuilder.ScenePath },
+                scenes = scenes.ToArray(),
                 locationPathName = BuildPath,
                 target = BuildTarget.StandaloneWindows64,
                 options = BuildOptions.None
@@ -39,68 +41,126 @@ namespace CarMonster.EditorTools
 
             BuildReport report = BuildPipeline.BuildPlayer(options);
             BuildSummary summary = report.summary;
-            Debug.Log($"[CarMonster] Build {summary.result}: {summary.totalSize / (1024 * 1024)} MB, {summary.totalTime}");
+            Debug.Log($"[CarMonster] Build {summary.result}: {scenes.Count} scenes, {summary.totalSize / (1024 * 1024)} MB, {summary.totalTime}");
             if (summary.result != BuildResult.Succeeded && Application.isBatchMode) EditorApplication.Exit(1);
+        }
+
+        /// <summary>Полноэкранный режим по умолчанию, ресайз окна, Alt+Enter.</summary>
+        public static void ApplyPlayerSettings()
+        {
+            PlayerSettings.productName = "Car Monster";
+            PlayerSettings.companyName = "CarMonster";
+            PlayerSettings.fullScreenMode = FullScreenMode.FullScreenWindow;
+            PlayerSettings.defaultIsNativeResolution = true;
+            PlayerSettings.resizableWindow = true;
+            PlayerSettings.allowFullscreenSwitch = true;
+            PlayerSettings.visibleInBackground = false;
+            PlayerSettings.runInBackground = false;
         }
 
         [MenuItem("Car Monster/Capture README Screenshots", priority = 21)]
         public static void CaptureScreenshots()
         {
             Directory.CreateDirectory(ScreenshotFolder);
-
             if (!File.Exists(DemoSceneBuilder.ScenePath)) DemoSceneBuilder.Build();
-            EditorSceneManager.OpenScene(DemoSceneBuilder.ScenePath, OpenSceneMode.Single);
+            GameCatalogSO catalog = CarRoster.LoadCatalog();
 
-            var player = GameObject.FindWithTag("Player").transform;
-            var cam = new GameObject("ScreenshotCam").AddComponent<Camera>();
-            cam.farClipPlane = 3000f;
-
-            bool fog = RenderSettings.fog;
-            RenderSettings.fog = false;
-            cam.fieldOfView = 50f;
-            cam.transform.position = new Vector3(380f, 300f, -470f);
-            cam.transform.LookAt(new Vector3(0f, 0f, 30f));
-            // Прогревочные кадры: первый рендер после открытия сцены в Unity 6 идёт с неготовыми данными инстансов.
-            Render(cam, "track_overview.png");
-            Render(cam, "track_overview.png");
-            Render(cam, "track_overview.png");
-            RenderSettings.fog = fog;
-
-            cam.fieldOfView = 55f;
-            cam.transform.position = player.position - player.forward * 11f + player.right * 3f + Vector3.up * 3.6f;
-            cam.transform.LookAt(player.position + player.forward * 22f + Vector3.up * 0.5f);
-            Render(cam, "start_grid.png");
-
-            foreach (string fx in new[] { "PerfectFire_0", "PerfectFire_1", "NitroFlame_0", "NitroFlame_1" })
+            string[] lineup = { "R35-GT", "KNT-XV", "SF90-V8", "NVR-EV", "G66-ARM", "SVJ-V12" };
+            for (int i = 0; i < catalog.locations.Length; i++)
             {
-                Transform t = player.Find(fx);
-                if (t == null) continue;
-                var ps = t.GetComponent<ParticleSystem>();
-                ps.Simulate(0.7f, true, true);
+                LocationSO loc = catalog.locations[i];
+                EditorSceneManager.OpenScene(LocationPresets.ScenePath(LocationPresets.All[i]), OpenSceneMode.Single);
+                Transform[] grid = GridSlots();
+                var spawned = new List<GameObject>();
+                for (int s = 0; s < grid.Length && s < lineup.Length; s++)
+                {
+                    int pick = (s + i) % lineup.Length;
+                    spawned.Add(Spawn(CarRoster.Load(lineup[pick]), grid[s].position, grid[s].rotation));
+                }
+
+                Camera cam = NewCamera();
+                if (Camera.main != null)
+                {
+                    cam.clearFlags = Camera.main.clearFlags;
+                    cam.backgroundColor = Camera.main.backgroundColor;
+                }
+                Transform p = grid[0];
+                cam.fieldOfView = 55f;
+                cam.transform.position = p.position - p.forward * 12f + p.right * 3.5f + Vector3.up * 4f;
+                cam.transform.LookAt(p.position + p.forward * 24f + Vector3.up * 0.5f);
+                Render(cam, $"loc_{loc.sceneName.Replace("Loc_", "").ToLowerInvariant()}.png");
+
+                if (i == 0)
+                {
+                    bool fog = RenderSettings.fog;
+                    RenderSettings.fog = false;
+                    cam.fieldOfView = 50f;
+                    cam.transform.position = new Vector3(380f, 300f, -470f);
+                    cam.transform.LookAt(new Vector3(0f, 0f, 30f));
+                    Render(cam, "track_overview.png");
+                    RenderSettings.fog = fog;
+
+                    GameObject hero = spawned[0];
+                    foreach (string fx in new[] { "PerfectFire_0", "PerfectFire_1", "NitroFlame_0", "NitroFlame_1" })
+                    {
+                        Transform t = hero.transform.Find(fx);
+                        if (t != null) t.GetComponent<ParticleSystem>().Simulate(0.7f, true, true);
+                    }
+                    Transform h = hero.transform;
+                    cam.fieldOfView = 40f;
+                    cam.transform.position = h.position - h.forward * 7.5f - h.right * 4f + Vector3.up * 1.6f;
+                    cam.transform.LookAt(h.position - h.forward * 2.5f + Vector3.up * 0.6f);
+                    Render(cam, "nitro_fx.png");
+                }
+                Object.DestroyImmediate(cam.gameObject);
             }
-            cam.fieldOfView = 40f;
-            cam.transform.position = player.position - player.forward * 7.5f - player.right * 4f + Vector3.up * 1.6f;
-            cam.transform.LookAt(player.position - player.forward * 2.5f + Vector3.up * 0.6f);
-            Render(cam, "nitro_fx.png");
 
-            Object.DestroyImmediate(cam.gameObject);
-            EditorSceneManager.OpenScene(DemoSceneBuilder.ScenePath, OpenSceneMode.Single);
+            var street = new List<CarDataSO>();
+            var hyper = new List<CarDataSO>();
+            var armored = new List<CarDataSO>();
+            foreach (CarDataSO car in catalog.cars)
+            {
+                if (car.tier == CarTier.ArmoredSpecial) armored.Add(car);
+                else if (car.tier == CarTier.Hyper) hyper.Add(car);
+                else street.Add(car);
+            }
+            RosterShot(street, 5, "roster_street_race.png", 4.6f, 11f);
+            RosterShot(hyper, 6, "roster_hyper.png", 4.6f, 11f);
+            RosterShot(armored, 5, "armored.png", 6.2f, 12f, true);
 
-            CaptureRoster();
             EditorSceneManager.OpenScene(DemoSceneBuilder.ScenePath, OpenSceneMode.Single);
             Debug.Log($"[CarMonster] Screenshots saved to {Path.GetFullPath(ScreenshotFolder)}");
         }
 
-        private static void CaptureRoster()
+        private static Transform[] GridSlots()
         {
-            CarDataSO[] cars = CarRoster.CreateOrUpdateAll();
-            GameBalanceSO balance = CarRoster.GetOrCreateBalance();
-            EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+            GameObject grid = GameObject.Find("StartGrid");
+            var result = new Transform[grid.transform.childCount];
+            for (int i = 0; i < result.Length; i++) result[i] = grid.transform.GetChild(i);
+            return result;
+        }
 
+        private static GameObject Spawn(CarDataSO data, Vector3 position, Quaternion rotation)
+        {
+            var go = (GameObject)PrefabUtility.InstantiatePrefab(data.prefab);
+            go.transform.SetPositionAndRotation(position - Vector3.up * 0.25f, rotation);
+            return go;
+        }
+
+        private static Camera NewCamera()
+        {
+            var cam = new GameObject("ScreenshotCam").AddComponent<Camera>();
+            cam.farClipPlane = 3000f;
+            return cam;
+        }
+
+        private static void RosterShot(List<CarDataSO> cars, int perRow, string file, float spacing, float rowSpacing, bool armored = false)
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
             Light sun = Object.FindFirstObjectByType<Light>();
             if (sun != null)
             {
-                sun.transform.rotation = Quaternion.Euler(38f, -150f, 0f);
+                sun.transform.rotation = Quaternion.Euler(40f, -150f, 0f);
                 sun.shadows = LightShadows.Soft;
                 sun.intensity = 1.4f;
             }
@@ -108,49 +168,52 @@ namespace CarMonster.EditorTools
             GameObject floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
             floor.transform.localScale = new Vector3(200f, 1f, 200f);
             floor.transform.position = new Vector3(0f, -0.5f, 0f);
-            floor.GetComponent<Renderer>().sharedMaterial =
-                DemoSceneBuilder.Mat("Showroom", new Color(0.1f, 0.1f, 0.12f), 0.3f, 0.75f);
+            floor.GetComponent<Renderer>().sharedMaterial = DemoSceneBuilder.Mat("Showroom", new Color(0.1f, 0.1f, 0.12f), 0.3f, 0.75f);
 
             Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            const int perRow = 6;
-            for (int i = 0; i < cars.Length; i++)
+            int rows = Mathf.CeilToInt(cars.Count / (float)perRow);
+            for (int i = 0; i < cars.Count; i++)
             {
                 int row = i / perRow;
                 int col = i % perRow;
-                var pos = new Vector3((col - (perRow - 1) * 0.5f) * 4.6f, 0.1f, row * -11f);
-                CarFactory.CreateCar(cars[i], balance, row == 0 && col == 0, pos, Quaternion.Euler(0f, 25f, 0f), null);
+                int inRow = Mathf.Min(perRow, cars.Count - row * perRow);
+                var pos = new Vector3((col - (inRow - 1) * 0.5f) * spacing, 0f, row * -rowSpacing);
+                Spawn(cars[i], pos + Vector3.up * 0.25f, Quaternion.Euler(0f, armored ? 30f : 25f, 0f));
 
                 var label = new GameObject("Label").AddComponent<TextMesh>();
                 label.font = font;
                 label.GetComponent<MeshRenderer>().sharedMaterial = font.material;
-                label.text = $"{cars[i].displayName}\n<size=40>{cars[i].inspiredBy}</size>";
+                string price = cars[i].price > 0 ? $"{cars[i].price:N0} CR" : "FREE";
+                label.text = $"{cars[i].displayName}\n<size=34>{cars[i].inspiredBy}</size>\n<size=34><color=#FFC93C>{price}</color></size>";
                 label.richText = true;
                 label.fontSize = 64;
-                label.characterSize = 0.045f;
-                label.anchor = TextAnchor.LowerCenter;
+                label.characterSize = armored ? 0.05f : 0.042f;
+                label.anchor = TextAnchor.UpperCenter;
                 label.alignment = TextAlignment.Center;
                 label.color = Color.white;
-                // Подпись лежит перед машиной, чтобы не перекрывать ряд позади.
-                label.transform.position = pos + new Vector3(0f, 0.05f, 3.4f);
+                label.transform.position = pos + new Vector3(0f, 0.05f, armored ? 4.6f : 3.4f);
                 label.transform.rotation = Quaternion.Euler(70f, 180f, 0f);
             }
 
-            var cam = new GameObject("ScreenshotCam").AddComponent<Camera>();
+            Camera cam = NewCamera();
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.04f, 0.05f, 0.08f);
             cam.fieldOfView = 40f;
-            cam.transform.position = new Vector3(0f, 17f, 21f);
-            cam.transform.LookAt(new Vector3(0f, 0f, -4f));
-            Render(cam, "roster.png");
+            float depth = (rows - 1) * rowSpacing * 0.5f;
+            float width = perRow * spacing;
+            cam.transform.position = new Vector3(0f, 9f + width * 0.32f, 12f + width * 0.32f - depth);
+            cam.transform.LookAt(new Vector3(0f, 0f, -depth));
+            Render(cam, file);
+            Render(cam, file);
         }
 
         private static void Render(Camera cam, string fileName, int width = 1600, int height = 900)
         {
-            var rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB)
-            {
-                antiAliasing = 8
-            };
+            var rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB) { antiAliasing = 8 };
             cam.targetTexture = rt;
+            // Прогрев: первый рендер после открытия сцены в Unity 6 идёт с неготовыми данными инстансов.
+            cam.Render();
+            cam.Render();
             cam.Render();
 
             RenderTexture previous = RenderTexture.active;

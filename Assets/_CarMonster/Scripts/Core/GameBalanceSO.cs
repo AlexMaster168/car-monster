@@ -129,7 +129,32 @@ namespace CarMonster
             public float takedownFocusHold = 0.35f;
         }
 
+        [Serializable]
+        public class AudioTuning
+        {
+            [Range(0f, 1f)] public float musicVolume = 0.55f;
+            [Range(0f, 1f)] public float engineVolume = 0.6f;
+            [Range(0f, 1f)] public float botEngineVolume = 0.45f;
+            [Tooltip("Питч музыки во время слоу-мо.")]
+            [Range(0.3f, 1f)] public float slowMoMusicPitch = 0.72f;
+            public float slowMoMusicCutoff = 900f;
+            public float musicFadeSpeed = 1.5f;
+        }
+
+        [Serializable]
+        public class EconomyTuning
+        {
+            public int startingCredits = 20000;
+            public int creditsPerCheckpoint = 500;
+            public int creditsPerTakedown = 3000;
+            public int finishBonus = 8000;
+            public int creditsPerSecondLeft = 100;
+            public int consolationCredits = 1000;
+        }
+
         public NitroTuning nitro = new NitroTuning();
+        public AudioTuning audio = new AudioTuning();
+        public EconomyTuning economy = new EconomyTuning();
         public CombatTuning combat = new CombatTuning();
         public TimeAttackTuning timeAttack = new TimeAttackTuning();
         public AITuning ai = new AITuning();

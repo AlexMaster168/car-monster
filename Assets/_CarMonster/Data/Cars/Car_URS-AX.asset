@@ -1,0 +1,111 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d94d356806b4db34faf29d66a54a661a, type: 3}
+  m_Name: Car_URS-AX
+  m_EditorClassIdentifier: 
+  displayName: Toro Urus Aegis
+  chassisCode: URS-AX
+  inspiredBy: "Lamborghini Urus (\u0431\u0440\u043E\u043D\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0439)"
+  carClass: 5
+  description: "\u0421\u0430\u043C\u044B\u0439 \u0431\u044B\u0441\u0442\u0440\u044B\u0439
+    \u0438\u0437 \u0431\u0440\u043E\u043D\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0445:
+    \u0441\u0443\u043F\u0435\u0440\u043A\u0430\u0440-SUV \u0441 \u043A\u043E\u0432\u0448\u043E\u043C
+    \u0438 \u0431\u0438\u0442\u0443\u0440\u0431\u043E V8."
+  bodyColor: {r: 1, g: 0.42, b: 0, a: 1}
+  statSpeed: 3
+  statAcceleration: 3
+  statHandling: 3
+  statToughness: 4
+  tier: 3
+  price: 180000
+  prefab: {fileID: 7523888245290868331, guid: b4479860c79326f4892146220848fa25, type: 3}
+  maxSpeedKmh: 290
+  acceleration: 23
+  accelerationCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.6
+      value: 0.7
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0.2
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  launchBoost: 0.5
+  brakeDeceleration: 38
+  reverseMaxSpeedKmh: 60
+  coastDrag: 0.25
+  steerRateLowSpeed: 105
+  steerRateHighSpeed: 52
+  steerResponse: 14
+  grip: 10.5
+  downforce: 12
+  driftPower: 70
+  driftSteerRange: 0.55
+  driftGrip: 2.6
+  driftSpeedRetention: 0.8
+  driftMinSpeedKmh: 55
+  suspensionLength: 0.55
+  wheelRadius: 0.44
+  springStrength: 38
+  springDamper: 2.6
+  extraAirGravity: 12
+  airStabilization: 14
+  airAngularDamping: 4
+  airYawControl: 3
+  landingAlignSpeed: 12
+  landingAlignTime: 0.35
+  mass: 2900
+  ramPower: 1.6
+  durability: 200
+  armor: 0.4
+  nitroCapacityPerBar: 110
+  nitroChargeMultiplier: 0.9
+  nitroForceMultiplier: 1
+  hasRamPlow: 1
+  plowDamageMultiplier: 1.5
+  plowFrontalArmor: 0.5
+  plowShoveSpeed: 6
+  engineSound:
+    type: 4
+    idleRpm: 900
+    redlineRpm: 6800
+    gears: 8
+    brightness: 0.6
+    roughness: 0.3
+    turbo: 0.9
+    backfire: 0.7
+    pitch: 0.95
+    volume: 1

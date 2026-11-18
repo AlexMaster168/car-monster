@@ -1,14 +1,71 @@
+using System;
 using UnityEngine;
 
 namespace CarMonster
 {
+    // Новые значения enum добавляются только в конец — они сериализуются числом.
     public enum CarClass
     {
         Drift,
         Track,
         Heavy,
         Muscle,
-        Hyper
+        Hyper,
+        Armored
+    }
+
+    public enum CarTier
+    {
+        Street,
+        Race,
+        Hyper,
+        ArmoredSpecial
+    }
+
+    public enum EngineType
+    {
+        Inline4,
+        Inline6,
+        FlatSix,
+        V6,
+        V8,
+        V10,
+        V12,
+        W16,
+        Electric
+    }
+
+    /// <summary>Параметры процедурного звука двигателя (см. EngineAudio).</summary>
+    [Serializable]
+    public class EngineSoundProfile
+    {
+        public EngineType type = EngineType.V8;
+        public float idleRpm = 900f;
+        public float redlineRpm = 8000f;
+        [Range(1, 10)] public int gears = 7;
+        [Tooltip("Яркость тембра: 0 = глухой бас, 1 = звонкий визг.")]
+        [Range(0f, 1f)] public float brightness = 0.6f;
+        [Tooltip("Неровность работы: бубнёж V8, «боксёрское» бормотание.")]
+        [Range(0f, 1f)] public float roughness = 0.2f;
+        [Tooltip("Свист турбины.")]
+        [Range(0f, 1f)] public float turbo = 0.3f;
+        [Tooltip("Выстрелы в выхлоп при сбросе газа.")]
+        [Range(0f, 1f)] public float backfire = 0.5f;
+        [Range(0.5f, 1.5f)] public float pitch = 1f;
+        [Range(0f, 1.5f)] public float volume = 1f;
+
+        public int Cylinders => type switch
+        {
+            EngineType.Inline4 => 4,
+            EngineType.Inline6 => 6,
+            EngineType.FlatSix => 6,
+            EngineType.V6 => 6,
+            EngineType.V8 => 8,
+            EngineType.V10 => 10,
+            EngineType.V12 => 12,
+            EngineType.W16 => 16,
+            _ => 0
+        };
     }
 
     /// <summary>
@@ -32,6 +89,13 @@ namespace CarMonster
         [Range(1, 5)] public int statAcceleration = 3;
         [Range(1, 5)] public int statHandling = 3;
         [Range(1, 5)] public int statToughness = 3;
+
+        [Header("Garage")]
+        public CarTier tier = CarTier.Race;
+        [Tooltip("Цена в кредитах. 0 = доступна сразу.")]
+        public int price = 25000;
+        [Tooltip("Префаб машины (генерится Car Monster → Create Car Roster). Ввод добавляется при спавне.")]
+        public GameObject prefab;
 
         [Header("Engine")]
         [Tooltip("Максимальная скорость без нитро, км/ч.")]
@@ -108,6 +172,19 @@ namespace CarMonster
         public float nitroChargeMultiplier = 1f;
         [Tooltip("Множитель силы ускорения нитро для этого шасси.")]
         public float nitroForceMultiplier = 1f;
+
+        [Header("Ram Plow (ковш)")]
+        [Tooltip("Бронированный ковш спереди: усиленный таран лбом, отпихивание и фронтальная броня.")]
+        public bool hasRamPlow;
+        [Tooltip("Множитель урона при ударе ковшом (фронтальный удар).")]
+        public float plowDamageMultiplier = 1.6f;
+        [Tooltip("Снижение урона, если бьют в ковш спереди.")]
+        [Range(0f, 0.9f)] public float plowFrontalArmor = 0.6f;
+        [Tooltip("Скорость, с которой ковш отбрасывает жертву, м/с (на 120+ км/ч сближения).")]
+        public float plowShoveSpeed = 7f;
+
+        [Header("Engine Sound")]
+        public EngineSoundProfile engineSound = new EngineSoundProfile();
 
         public float MaxSpeedMs => maxSpeedKmh / 3.6f;
     }

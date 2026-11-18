@@ -55,6 +55,17 @@ namespace CarMonster
             ResetProgress();
         }
 
+        /// <summary>Настройка бота при спавне из кода (до первого FixedUpdate).</summary>
+        public void Configure(GameBalanceSO balanceAsset, WaypointCircuit track, ArcadeCarController rivalCar,
+            float aiSkill, float aiAggression, float lane)
+        {
+            balance = balanceAsset;
+            skill = Mathf.Clamp01(aiSkill);
+            aggression = Mathf.Clamp01(aiAggression);
+            laneOffset = lane;
+            SetCircuit(track, rivalCar);
+        }
+
         public void SetCircuit(WaypointCircuit value, ArcadeCarController rivalCar)
         {
             circuit = value;
