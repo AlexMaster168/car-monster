@@ -23,7 +23,23 @@ namespace CarMonster
             if (_manager == null) return;
             _manager.TimeBonusAdded += OnBonus;
             _manager.PlayerChanged += Bind;
+            TakedownSystem.AnyTakedown += OnAnyTakedown;
+            TakedownSystem.AnyReassembled += OnAnyReassembled;
             Bind(_manager.Player);
+        }
+
+        private void OnAnyTakedown(TakedownSystem attacker, TakedownSystem victim)
+        {
+            if (victim == null || _takedown == null) return;
+            if (victim == _takedown)
+                ShowPopup(attacker != null ? $"WRECKED BY {attacker.Car.Data.displayName.ToUpperInvariant()}" : "CRASHED!");
+            else if (attacker != _takedown)
+                ShowPopup($"{victim.Car.Data.displayName.ToUpperInvariant()} WRECKED");
+        }
+
+        private void OnAnyReassembled(TakedownSystem car)
+        {
+            if (car == _takedown) ShowPopup("BACK IN THE RACE!");
         }
 
         private void OnDestroy()
@@ -33,6 +49,8 @@ namespace CarMonster
                 _manager.TimeBonusAdded -= OnBonus;
                 _manager.PlayerChanged -= Bind;
             }
+            TakedownSystem.AnyTakedown -= OnAnyTakedown;
+            TakedownSystem.AnyReassembled -= OnAnyReassembled;
             Bind(null);
         }
 
@@ -99,6 +117,18 @@ namespace CarMonster
 
             if (_nitro != null) DrawNitro(new Rect(36, h - 96, 440, 28));
             if (_takedown != null) GuiKit.Bar(new Rect(36, h - 54, 440, 12), _takedown.Health01, new Color(0.3f, 1f, 0.4f));
+
+            if (_takedown != null && (_takedown.IsWrecked || _takedown.IsReassembling))
+            {
+                GuiKit.Rect(new Rect(0, h * 0.42f, w, 110), new Color(0f, 0f, 0f, 0.45f));
+                string text = _takedown.IsReassembling
+                    ? "<color=#7CFFB2>SELF-REPAIR…</color>"
+                    : "<color=#FF5A46>WRECKED</color>";
+                GUI.Label(new Rect(0, h * 0.42f, w, 80), text, _center);
+                if (!_takedown.IsReassembling)
+                    GUI.Label(new Rect(0, h * 0.42f + 72, w, 34), "машина соберётся сама и поедет дальше",
+                        GuiKit.Label(22, FontStyle.Normal, TextAnchor.MiddleCenter));
+            }
 
             if (Time.unscaledTime < _popupUntil)
                 GUI.Label(new Rect(0, h * 0.18f, w, 70), _popup, _center);

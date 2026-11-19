@@ -69,7 +69,7 @@ MonoBehaviour:
     driftCornerAngle: 40
     straightAngle: 8
     avoidRayLength: 10
-    avoidRayPerMs: 0.35
+    avoidRayPerMs: 0.8
     avoidStrength: 1.1
     obstacleMask:
       serializedVersion: 2

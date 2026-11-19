@@ -12,6 +12,34 @@ namespace CarMonster
         [SerializeField] private Transform[] waypoints;
         [SerializeField] private bool loop = true;
         [SerializeField] private Color gizmoColor = new Color(1f, 0.8f, 0f);
+        [Tooltip("Половина ширины дороги, м.")]
+        [SerializeField] private float halfWidth = 11f;
+        [Tooltip("Участки без дороги (пропасти) по дистанции: x = начало, y = конец. Там нельзя собираться.")]
+        [SerializeField] private Vector2[] gaps = new Vector2[0];
+
+        public float HalfWidth => halfWidth;
+
+        /// <summary>Если дистанция попадает в пропасть или разгон перед ней — сдвинуть за пропасть.</summary>
+        public float SkipGaps(float distance, float approach = 45f)
+        {
+            float d = Wrap(distance);
+            for (int i = 0; i < gaps.Length; i++)
+            {
+                if (d >= gaps[i].x - approach && d <= gaps[i].y + 4f) return gaps[i].y + 12f;
+            }
+            return d;
+        }
+
+        /// <summary>Расстояние от точки до дороги (по горизонтали от осевой и по высоте).</summary>
+        public void DistanceToTrack(Vector3 position, out float lateral, out float below)
+        {
+            float along = GetClosestDistance(position);
+            Vector3 p = GetPoint(along);
+            Vector3 flat = position - p;
+            below = p.y - position.y;
+            flat.y = 0f;
+            lateral = Mathf.Max(0f, flat.magnitude - halfWidth);
+        }
 
         private Vector3[] _points;
         private float[] _distances;
@@ -148,6 +176,12 @@ namespace CarMonster
             waypoints = points;
             loop = isLoop;
             Rebuild();
+        }
+
+        public void EditorSetRoad(float roadHalfWidth, Vector2[] gapRanges)
+        {
+            halfWidth = roadHalfWidth;
+            gaps = gapRanges ?? new Vector2[0];
         }
 
         private void OnDrawGizmos()

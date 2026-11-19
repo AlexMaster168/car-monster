@@ -74,6 +74,24 @@ namespace CarMonster
             public float slowMoDuration = 0.8f;
             [Range(0.02f, 1f)] public float slowMoTimeScale = 0.2f;
             public float respawnInvulnerability = 2f;
+
+            [Header("Wall crash (самоуничтожение об стены)")]
+            [Tooltip("Удар в стену/отбойник с нормальной составляющей скорости выше этой — урон себе, км/ч.")]
+            public float wallCrashMinKmh = 100f;
+            [Tooltip("Урон себе за 1 км/ч нормальной скорости удара.")]
+            public float wallDamagePerKmh = 1f;
+
+            [Header("Self-reassembly (самосборка)")]
+            [Tooltip("Время полёта корпуса к точке сборки, сек.")]
+            public float reassembleMoveTime = 0.6f;
+            [Tooltip("Время полёта одной детали обратно, сек.")]
+            public float reassemblePartTime = 0.45f;
+            [Tooltip("Задержка между стартами деталей, сек.")]
+            public float reassembleStagger = 0.07f;
+            public float reassembleHoverHeight = 0.6f;
+            [Tooltip("С какой скоростью собранная машина продолжает гонку, км/ч.")]
+            public float reassembleLaunchKmh = 90f;
+            public Color charredColor = new Color(0.07f, 0.06f, 0.06f);
         }
 
         [Serializable]
@@ -84,11 +102,15 @@ namespace CarMonster
             public int laps = 3;
             public float countdownDuration = 3f;
             public float respawnDelay = 3f;
-            [Tooltip("Насколько назад по трассе ставить машину при респавне, м.")]
-            public float respawnBackOffset = 8f;
+            [Tooltip("Насколько вперёд по трассе от места аварии собирается машина, м.")]
+            public float respawnAheadOffset = 6f;
             public float respawnClearRadius = 2.8f;
             [Tooltip("Ниже этой высоты машина считается упавшей с трассы.")]
             public float killY = -30f;
+            [Tooltip("Дальше от края дороги — «вылет с трассы», м.")]
+            public float offTrackDistance = 12f;
+            [Tooltip("Сколько можно быть вне трассы до авто-возврата, сек.")]
+            public float offTrackTime = 2.5f;
         }
 
         [Serializable]
@@ -104,7 +126,7 @@ namespace CarMonster
             public float driftCornerAngle = 40f;
             public float straightAngle = 8f;
             public float avoidRayLength = 10f;
-            public float avoidRayPerMs = 0.35f;
+            public float avoidRayPerMs = 0.8f;
             public float avoidStrength = 1.1f;
             public LayerMask obstacleMask = ~0;
             public float attackRange = 35f;
@@ -150,6 +172,9 @@ namespace CarMonster
             public int finishBonus = 8000;
             public int creditsPerSecondLeft = 100;
             public int consolationCredits = 1000;
+            [Tooltip("Кнопка «+бабки» в гараже (отключи перед релизом).")]
+            public bool showMoneyCheat = true;
+            public int moneyCheatAmount = 1000000;
         }
 
         public NitroTuning nitro = new NitroTuning();

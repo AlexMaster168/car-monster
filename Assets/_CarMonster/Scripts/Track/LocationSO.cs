@@ -35,6 +35,29 @@ namespace CarMonster
         [Tooltip("Количество полуволн S-связки (кратно 0.5).")]
         public float sBendWaves = 1f;
 
+        [Header("Relief & attractions (сборщик сцены)")]
+        [Tooltip("Высота главного холма на обратной половине трассы, м.")]
+        public float hillHeight = 10f;
+        [Tooltip("Волны рельефа поверх холма.")]
+        public float hillWaves = 2f;
+        [Tooltip("Гребни-трамплины на обратной прямой: высота, м (0 = нет).")]
+        public float crestHeight = 2.5f;
+        public int crestCount = 3;
+        [Tooltip("Наклон дороги в поворотах (вираж), град.")]
+        public float bankAngle = 12f;
+        [Tooltip("Пропасть поперёк стартовой прямой, которую надо перепрыгнуть.")]
+        public bool chasm;
+        [Tooltip("Где начинается пропасть (доля стартовой прямой).")]
+        [Range(0.2f, 0.8f)] public float chasmAt = 0.47f;
+        public float chasmLength = 18f;
+        [Tooltip("Неоновый тоннель на обратной прямой.")]
+        public bool tunnel;
+        public int boostPads = 5;
+        [Tooltip("Плотность разлетающегося реквизита (конусы, бочки, знаки).")]
+        [Range(0f, 2f)] public float propDensity = 1f;
+        public Color barrierColorA = new Color(0.85f, 0.1f, 0.1f);
+        public Color barrierColorB = new Color(0.92f, 0.92f, 0.92f);
+
         [Header("Look (сборщик сцены)")]
         public DecorStyle decor = DecorStyle.CityTowers;
         public Color groundColor = new Color(0.24f, 0.32f, 0.22f);

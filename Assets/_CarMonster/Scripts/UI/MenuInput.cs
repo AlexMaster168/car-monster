@@ -21,7 +21,9 @@ namespace CarMonster
         public static bool Back => KeyDown(Key.Escape) || Pad(g => g.startButton);
         public static bool Restart => KeyDown(Key.R) || Pad(g => g.selectButton);
         public static bool Fullscreen => KeyDown(Key.F11);
+        public static bool Money => KeyDown(Key.M);
 #else
+        public static bool Money => Input.GetKeyDown(KeyCode.M);
         public static bool Left => Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A);
         public static bool Right => Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D);
         public static bool Up => Input.GetKeyDown(KeyCode.UpArrow);

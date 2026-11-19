@@ -119,10 +119,10 @@ namespace CarMonster.EditorTools
             var points = new List<Vector3>();
             float half = loc.straightLength * 0.5f;
             float r = loc.cornerRadius;
-            const float step = 30f;
+            const float step = 10f;
 
             for (float z = -half; z < half; z += step) points.Add(new Vector3(r, 0f, z));
-            for (float a = 0f; a < 180f; a += 15f)
+            for (float a = 0f; a < 180f; a += 6f)
             {
                 float rad = a * Mathf.Deg2Rad;
                 points.Add(new Vector3(Mathf.Cos(rad) * r, 0f, half + Mathf.Sin(rad) * r));
@@ -132,11 +132,13 @@ namespace CarMonster.EditorTools
                 float t = Mathf.InverseLerp(half, -half, z);
                 points.Add(new Vector3(-r + Mathf.Sin(t * Mathf.PI * 2f * loc.sBendWaves) * loc.sBendAmplitude, 0f, z));
             }
-            for (float a = 180f; a < 360f; a += 15f)
+            for (float a = 180f; a < 360f; a += 6f)
             {
                 float rad = a * Mathf.Deg2Rad;
                 points.Add(new Vector3(Mathf.Cos(rad) * r, 0f, -half + Mathf.Sin(rad) * r));
             }
+
+            ApplyElevation(points, loc);
 
             var transforms = new Transform[points.Count];
             for (int i = 0; i < points.Count; i++)
@@ -152,54 +154,115 @@ namespace CarMonster.EditorTools
             return circuit;
         }
 
+        /// <summary>
+        /// Рельеф: стартовая прямая ровная, на остальной трассе — большой холм с волнами (эстакада)
+        /// и гребни-трамплины на обратной прямой.
+        /// </summary>
+        private static void ApplyElevation(List<Vector3> points, LocationSO loc)
+        {
+            var dist = new float[points.Count];
+            for (int i = 1; i < points.Count; i++) dist[i] = dist[i - 1] + Vector3.Distance(points[i - 1], points[i]);
+            float total = dist[points.Count - 1] + Vector3.Distance(points[points.Count - 1], points[0]);
+            float flatEnd = loc.straightLength + 10f;
+            float backStart = loc.straightLength + Mathf.PI * loc.cornerRadius;
+            float backEnd = backStart + loc.straightLength;
+
+            for (int i = 0; i < points.Count; i++)
+            {
+                float d = dist[i];
+                if (d < flatEnd) continue;
+                float u = Mathf.InverseLerp(flatEnd, total - 10f, d);
+                float y = loc.hillHeight * Mathf.Sin(Mathf.PI * u) * (0.7f + 0.3f * Mathf.Cos(2f * Mathf.PI * loc.hillWaves * u));
+
+                // Гребни на обратной прямой — короткие горбы, с которых машина взлетает.
+                for (int k = 0; k < loc.crestCount; k++)
+                {
+                    float center = Mathf.Lerp(backStart + 60f, backEnd - 60f, (k + 0.5f) / Mathf.Max(1, loc.crestCount));
+                    float x = (d - center) / 14f;
+                    y += loc.crestHeight * Mathf.Exp(-x * x);
+                }
+                Vector3 p = points[i];
+                p.y = Mathf.Max(0f, y);
+                points[i] = p;
+            }
+        }
+
+        private static float _chasmZ0 = float.MaxValue;
+        private static float _chasmZ1 = float.MinValue;
+
+        private static bool InChasm(Vector3 p) => p.z > _chasmZ0 - 1f && p.z < _chasmZ1 + 1f;
+
+        private static float GroundAt(Vector3 p) => InChasm(p) ? -60f : 0f;
+
         private static void BuildEnvironment(Transform parent, WaypointCircuit circuit, LocationSO loc)
         {
             string id = loc.sceneName;
-            GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            ground.name = "Ground";
-            ground.transform.SetParent(parent, false);
-            ground.transform.localScale = new Vector3(2000f, 1f, 2400f);
-            ground.transform.position = new Vector3(0f, -0.5f, 0f);
-            ground.GetComponent<Renderer>().sharedMaterial = Mat("Ground_" + id, loc.groundColor, 0f, 0.15f);
-            ground.isStatic = true;
+            float half = loc.straightLength * 0.5f;
+            float straight = loc.straightLength;
+            float backStraight = straight + Mathf.PI * loc.cornerRadius;
 
+            // ---- Пропасть поперёк стартовой прямой ----
+            var gaps = new List<Vector2>();
+            _chasmZ0 = float.MaxValue;
+            _chasmZ1 = float.MinValue;
+            if (loc.chasm)
+            {
+                float g0 = straight * loc.chasmAt;
+                gaps.Add(new Vector2(g0, g0 + loc.chasmLength));
+                _chasmZ0 = -half + g0;
+                _chasmZ1 = -half + g0 + loc.chasmLength;
+            }
+            circuit.EditorSetRoad(RoadWidth * 0.5f, gaps.ToArray());
+
+            Material groundMat = Mat("Ground_" + id, loc.groundColor, 0f, 0.15f);
+            if (loc.chasm)
+            {
+                float southLen = _chasmZ0 + 1200f;
+                float northLen = 1200f - _chasmZ1;
+                GroundSlab(parent, new Vector3(0f, -0.5f, -1200f + southLen * 0.5f), new Vector3(2000f, 1f, southLen), groundMat);
+                GroundSlab(parent, new Vector3(0f, -0.5f, _chasmZ1 + northLen * 0.5f), new Vector3(2000f, 1f, northLen), groundMat);
+                Material cliff = Mat("Cliff_" + id, loc.decorColor * 0.8f, 0f, 0.1f);
+                VisualBox(parent, "CliffSouth", new Vector3(0f, -30f, _chasmZ0 - 2f), Quaternion.identity, new Vector3(2000f, 60f, 4f), cliff);
+                VisualBox(parent, "CliffNorth", new Vector3(0f, -30f, _chasmZ1 + 2f), Quaternion.identity, new Vector3(2000f, 60f, 4f), cliff);
+            }
+            else
+            {
+                GroundSlab(parent, new Vector3(0f, -0.5f, 0f), new Vector3(2000f, 1f, 2400f), groundMat);
+            }
+
+            // ---- Дорога ----
             var road = new GameObject("Road");
             road.transform.SetParent(parent, false);
+            bool icy = loc.decor == DecorStyle.PortContainers;
             Material roadMat = Mat("Road_" + id, loc.roadColor, 0f, 0.35f);
             Material lineMat = Mat("RoadLine", new Color(0.95f, 0.95f, 0.95f), 0f, 0.3f, Color.white * 0.3f);
-            bool icy = loc.decor == DecorStyle.PortContainers;
             Material curbA = icy ? Mat("CurbBlue", new Color(0.1f, 0.35f, 0.9f), 0f, 0.3f) : Mat("CurbRed", new Color(0.85f, 0.1f, 0.1f), 0f, 0.3f);
             Material curbB = Mat("CurbWhite", new Color(0.92f, 0.92f, 0.92f), 0f, 0.3f);
 
-            const float seg = 6f;
-            int index = 0;
-            for (float d = 0f; d < circuit.Length; d += seg, index++)
-            {
-                Vector3 a = circuit.GetPoint(d);
-                Vector3 b = circuit.GetPoint(d + seg);
-                Vector3 mid = (a + b) * 0.5f;
-                Quaternion rot = Quaternion.LookRotation((b - a).normalized, Vector3.up);
-                Vector3 right = rot * Vector3.right;
+            List<RoadBuilder.Sample> samples = RoadBuilder.SampleRoad(circuit, loc.bankAngle, gaps.ToArray());
+            RoadBuilder.BuildRoadMesh(road.transform, samples, RoadWidth * 0.5f, roadMat, curbA, curbB, lineMat,
+                $"{CarRoster.Root}/Meshes/Road_{id}.asset");
+            Material barrierA = Mat("BarrierA_" + id, loc.barrierColorA, 0.1f, 0.4f, loc.decor == DecorStyle.CityTowers ? (Color?)(loc.barrierColorA * 1.5f) : null);
+            Material barrierB = Mat("BarrierB_" + id, loc.barrierColorB, 0.1f, 0.4f);
+            RoadBuilder.BuildBarriers(road.transform, samples, RoadWidth * 0.5f, barrierA, barrierB);
+            RoadBuilder.BuildPillars(road.transform, samples, RoadWidth * 0.5f, Mat("Pillar", new Color(0.45f, 0.45f, 0.48f), 0.2f, 0.3f), GroundAt);
 
-                VisualBox(road.transform, "Asphalt", mid + Vector3.up * 0.01f, rot, new Vector3(RoadWidth, 0.04f, seg + 0.8f), roadMat);
-                Material curb = index % 2 == 0 ? curbA : curbB;
-                VisualBox(road.transform, "CurbL", mid - right * (RoadWidth * 0.5f + 0.6f) + Vector3.up * 0.02f, rot, new Vector3(1.2f, 0.06f, seg + 0.1f), curb);
-                VisualBox(road.transform, "CurbR", mid + right * (RoadWidth * 0.5f + 0.6f) + Vector3.up * 0.02f, rot, new Vector3(1.2f, 0.06f, seg + 0.1f), curb);
-                if (index % 3 == 0)
-                    VisualBox(road.transform, "Line", mid + Vector3.up * 0.035f, rot, new Vector3(0.35f, 0.02f, seg * 0.6f), lineMat);
-            }
-
+            // ---- Трамплины ----
             Material rampMat = Mat("Ramp", new Color(1f, 0.55f, 0.05f), 0.2f, 0.5f);
-            float straight = loc.straightLength;
-            float backStraight = straight + Mathf.PI * loc.cornerRadius;
             Ramp(parent, circuit, 150f, rampMat);
-            Ramp(parent, circuit, straight - 120f, rampMat);
-            Ramp(parent, circuit, backStraight + 60f, rampMat);
+            if (loc.chasm) Ramp(parent, circuit, gaps[0].x - 11f, rampMat, RoadWidth + 2f);
+            else Ramp(parent, circuit, straight - 120f, rampMat);
+            Ramp(parent, circuit, backStraight + 30f, rampMat);
 
+            // ---- Препятствия ----
             Material block = Mat("Concrete", new Color(0.6f, 0.6f, 0.62f), 0f, 0.2f);
-            Obstacle(parent, circuit, straight * 0.62f, 6f, block);
-            Obstacle(parent, circuit, straight * 0.62f + 15f, -6f, block);
-            Obstacle(parent, circuit, backStraight + straight * 0.62f, 0f, block);
+            Obstacle(parent, circuit, straight * 0.66f, 6f, block);
+            Obstacle(parent, circuit, straight * 0.66f + 15f, -6f, block);
+            Obstacle(parent, circuit, backStraight + straight * 0.55f, 0f, block);
+
+            BuildBoostPads(parent, circuit, loc, gaps);
+            BuildProps(parent, samples, loc);
+            if (loc.tunnel) BuildTunnel(parent, samples, loc, backStraight + straight * 0.2f, backStraight + straight * 0.45f);
 
             var deco = new GameObject("Decor");
             deco.transform.SetParent(parent, false);
@@ -209,6 +272,156 @@ namespace CarMonster.EditorTools
                 case DecorStyle.PortContainers: BuildContainers(deco.transform, circuit, loc); break;
                 default: BuildTowers(deco.transform, circuit, loc); break;
             }
+        }
+
+        private static void GroundSlab(Transform parent, Vector3 center, Vector3 size, Material mat)
+        {
+            GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            ground.name = "Ground";
+            ground.transform.SetParent(parent, false);
+            ground.transform.position = center;
+            ground.transform.localScale = size;
+            ground.GetComponent<Renderer>().sharedMaterial = mat;
+            ground.isStatic = true;
+        }
+
+        private static void BuildBoostPads(Transform parent, WaypointCircuit circuit, LocationSO loc, List<Vector2> gaps)
+        {
+            var root = new GameObject("BoostPads");
+            root.transform.SetParent(parent, false);
+            Material pad = Mat("BoostPad", new Color(0.1f, 0.9f, 1f), 0f, 0.6f, new Color(0.1f, 0.9f, 1f) * 3f);
+            var spots = new List<float>();
+            if (gaps.Count > 0)
+            {
+                // Перед пропастью — пара падов, чтобы точно долететь.
+                spots.Add(gaps[0].x - 70f);
+                spots.Add(gaps[0].x - 70f);
+            }
+            for (int i = 0; spots.Count < loc.boostPads; i++)
+                spots.Add(circuit.Length * (0.12f + 0.8f * i / Mathf.Max(1, loc.boostPads)));
+
+            for (int i = 0; i < spots.Count; i++)
+            {
+                float lane = i % 2 == 0 ? -5f : 5f;
+                Vector3 pos = PoseOn(circuit, spots[i], lane, out Quaternion rot);
+                var go = new GameObject($"BoostPad_{i}");
+                go.transform.SetParent(root.transform, false);
+                go.transform.SetPositionAndRotation(pos - Vector3.up * 0.2f, rot);
+                var box = go.AddComponent<BoxCollider>();
+                box.isTrigger = true;
+                box.size = new Vector3(6f, 2.5f, 8f);
+                box.center = new Vector3(0f, 1f, 0f);
+                go.AddComponent<BoostPad>();
+                // Стрелки-шевроны.
+                for (int k = 0; k < 3; k++)
+                {
+                    Vector3 basePos = pos + rot * new Vector3(0f, -0.21f, -2.5f + k * 2.5f);
+                    VisualBox(go.transform, "ChevronL", basePos + rot * new Vector3(-1.1f, 0f, 0f), rot * Quaternion.Euler(0f, 35f, 0f), new Vector3(0.5f, 0.04f, 2.6f), pad);
+                    VisualBox(go.transform, "ChevronR", basePos + rot * new Vector3(1.1f, 0f, 0f), rot * Quaternion.Euler(0f, -35f, 0f), new Vector3(0.5f, 0.04f, 2.6f), pad);
+                }
+            }
+        }
+
+        private static void BuildProps(Transform parent, List<RoadBuilder.Sample> samples, LocationSO loc)
+        {
+            var root = new GameObject("Props");
+            root.transform.SetParent(parent, false);
+            Material cone = Mat("Cone", new Color(1f, 0.45f, 0.05f), 0f, 0.4f);
+            Material barrel = Mat("Barrel", new Color(0.75f, 0.1f, 0.08f), 0.3f, 0.5f);
+            Material sign = Mat("Sign", new Color(1f, 0.85f, 0.1f), 0f, 0.5f, new Color(1f, 0.85f, 0.1f) * 0.6f);
+            var rng = new System.Random(loc.sceneName.GetHashCode());
+            int stride = Mathf.Max(6, Mathf.RoundToInt(14f / Mathf.Max(0.2f, loc.propDensity)));
+            float half = RoadWidth * 0.5f;
+
+            for (int i = 10; i < samples.Count - 10; i += stride)
+            {
+                RoadBuilder.Sample s = samples[i];
+                if (s.gap) continue;
+                float curv = s.curvature;
+                if (Mathf.Abs(curv) > 7f)
+                {
+                    // Апекс поворота: конусы по внутренней кромке.
+                    float inner = curv > 0f ? 1f : -1f;
+                    for (int k = 0; k < 3; k++)
+                    {
+                        Vector3 pos = s.c + s.right * (inner * (half - 1.2f - k * 0.9f)) + s.fwd * (k * 1.4f);
+                        Prop(root.transform, PrimitiveType.Cylinder, pos + s.up * 0.4f, Quaternion.LookRotation(s.fwd, s.up), new Vector3(0.45f, 0.4f, 0.45f), cone, 4f);
+                    }
+                }
+                else if (rng.NextDouble() < 0.6)
+                {
+                    // Бочки у обочины.
+                    float side = rng.NextDouble() > 0.5 ? 1f : -1f;
+                    Vector3 pos = s.c + s.right * (side * (half - 1.5f));
+                    for (int k = 0; k < 2; k++)
+                        Prop(root.transform, PrimitiveType.Cylinder, pos + s.fwd * (k * 1.3f) + s.up * 0.6f, Quaternion.LookRotation(s.fwd, s.up), new Vector3(0.9f, 0.6f, 0.9f), barrel, 25f);
+                }
+                else
+                {
+                    // Знак-стрелка.
+                    float side = rng.NextDouble() > 0.5 ? 1f : -1f;
+                    Vector3 pos = s.c + s.right * (side * (half - 1f)) + s.up * 1.1f;
+                    Prop(root.transform, PrimitiveType.Cube, pos, Quaternion.LookRotation(-s.right * side, s.up), new Vector3(1.6f, 1.2f, 0.12f), sign, 15f);
+                }
+            }
+        }
+
+        private static void Prop(Transform parent, PrimitiveType type, Vector3 pos, Quaternion rot, Vector3 scale, Material mat, float mass)
+        {
+            GameObject go = GameObject.CreatePrimitive(type);
+            go.name = type == PrimitiveType.Cube ? "Sign" : "Prop";
+            go.transform.SetParent(parent, false);
+            go.transform.SetPositionAndRotation(pos, rot);
+            go.transform.localScale = scale;
+            go.GetComponent<Renderer>().sharedMaterial = mat;
+            var rb = go.AddComponent<Rigidbody>();
+            rb.mass = mass;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+            go.AddComponent<DestructibleProp>();
+        }
+
+        private static void BuildTunnel(Transform parent, List<RoadBuilder.Sample> samples, LocationSO loc, float from, float to)
+        {
+            var root = new GameObject("Tunnel");
+            root.transform.SetParent(parent, false);
+            Material shell = Mat("TunnelShell", new Color(0.12f, 0.12f, 0.16f), 0.3f, 0.5f);
+            Material glow = Mat("Glow_" + loc.sceneName, loc.glowColor, 0f, 0.5f, loc.glowColor * 2.5f);
+            Material glow2 = Mat("TunnelCyan", new Color(0.1f, 0.85f, 1f), 0f, 0.5f, new Color(0.1f, 0.85f, 1f) * 2.5f);
+            float half = RoadWidth * 0.5f + 2.5f;
+            const float height = 8f;
+            int n = 0;
+
+            for (int i = 0; i < samples.Count - 2; i += 2, n++)
+            {
+                RoadBuilder.Sample s = samples[i];
+                if (s.d < from || s.d > to) continue;
+                Vector3 mid = (s.c + samples[i + 2].c) * 0.5f;
+                Quaternion rot = Quaternion.LookRotation((samples[i + 2].c - s.c).normalized, Vector3.up);
+                float len = Vector3.Distance(s.c, samples[i + 2].c) + 0.2f;
+
+                // Стены с коллайдером — тоже «стенки» для крашей.
+                Wall(root.transform, mid - s.right * half + Vector3.up * height * 0.5f, rot, new Vector3(1f, height, len), shell, true);
+                Wall(root.transform, mid + s.right * half + Vector3.up * height * 0.5f, rot, new Vector3(1f, height, len), shell, true);
+                Wall(root.transform, mid + Vector3.up * height, rot, new Vector3(half * 2f + 1f, 0.6f, len), shell, false);
+                if (n % 2 == 0)
+                {
+                    Wall(root.transform, mid + Vector3.up * (height - 0.4f), rot, new Vector3(half * 1.6f, 0.15f, 0.5f), n % 4 == 0 ? glow : glow2, false);
+                    Wall(root.transform, mid - s.right * (half - 0.55f) + Vector3.up * 1.2f, rot, new Vector3(0.1f, 0.2f, len), glow2, false);
+                    Wall(root.transform, mid + s.right * (half - 0.55f) + Vector3.up * 1.2f, rot, new Vector3(0.1f, 0.2f, len), glow, false);
+                }
+            }
+        }
+
+        private static void Wall(Transform parent, Vector3 pos, Quaternion rot, Vector3 size, Material mat, bool collider)
+        {
+            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name = collider ? "TunnelWall" : "TunnelTrim";
+            if (!collider) Object.DestroyImmediate(go.GetComponent<Collider>());
+            go.transform.SetParent(parent, false);
+            go.transform.SetPositionAndRotation(pos, rot);
+            go.transform.localScale = size;
+            go.GetComponent<Renderer>().sharedMaterial = mat;
+            go.isStatic = true;
         }
 
         private static void BuildTowers(Transform parent, WaypointCircuit circuit, LocationSO loc)
@@ -293,10 +506,13 @@ namespace CarMonster.EditorTools
             Vector3 dir = circuit.GetDirection(distance);
             Vector3 right = Vector3.Cross(Vector3.up, dir).normalized;
             pos = p + right * side * (RoadWidth * 0.5f + offset);
-            rot = Quaternion.LookRotation(dir);
+            pos.y = 0f; // декор стоит на земле, даже если дорога рядом на эстакаде
+            if (InChasm(pos))
+                pos.z = pos.z - _chasmZ0 < _chasmZ1 - pos.z ? _chasmZ0 - 15f : _chasmZ1 + 15f;
+            rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(dir, Vector3.up));
         }
 
-        private static void Ramp(Transform parent, WaypointCircuit circuit, float distance, Material mat)
+        private static void Ramp(Transform parent, WaypointCircuit circuit, float distance, Material mat, float width = RoadWidth * 0.55f)
         {
             const float length = 22f;
             const float angle = 12f;
@@ -310,7 +526,7 @@ namespace CarMonster.EditorTools
             ramp.transform.SetParent(parent, false);
             ramp.transform.position = p + Vector3.up * cy;
             ramp.transform.rotation = Quaternion.LookRotation(dir, Vector3.up) * Quaternion.Euler(-angle, 0f, 0f);
-            ramp.transform.localScale = new Vector3(RoadWidth * 0.55f, thickness, length);
+            ramp.transform.localScale = new Vector3(width, thickness, length);
             ramp.GetComponent<Renderer>().sharedMaterial = mat;
             ramp.isStatic = true;
         }

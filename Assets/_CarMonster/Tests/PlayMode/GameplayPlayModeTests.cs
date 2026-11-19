@@ -69,26 +69,32 @@ namespace CarMonster.Tests
             yield return LoadRace("R35-GT");
             Assert.AreEqual(6, _manager.Racers.Count, "Игрок + 5 ботов");
 
+            // Тест про физику и ИИ, не про бой: боты не должны выбить игрока посреди замера.
+            _player.GetComponent<TakedownSystem>().SetInvulnerable(30f);
             Vector3 start = _player.Body.position;
             _input.Set(1f, 0f, false);
-            yield return WaitSeconds(5f);
+            // 6.5 с: машина успевает взлететь с трамплина и приземлиться — проверяем, что прыжок не гасит скорость.
+            yield return WaitSeconds(6.5f);
 
             float travelled = Vector3.Distance(start, _player.Body.position);
             var engine = _player.GetComponent<EngineAudio>();
             Debug.Log($"[Test] speed {_player.SpeedKmh:0} km/h, travelled {travelled:0} m, gear {engine.Gear}, rpm {engine.Rpm:0}");
-            Assert.Greater(_player.SpeedKmh, 120f);
-            Assert.Greater(travelled, 150f);
+            Assert.Greater(_player.SpeedKmh, 150f, "После прыжка с трамплина скорость должна сохраниться");
+            Assert.Greater(travelled, 300f);
             Assert.Greater(Vector3.Dot(_player.transform.up, Vector3.up), 0.9f, "Машина не должна перевернуться");
             Assert.GreaterOrEqual(engine.Gear, 3, "Коробка должна переключаться вверх");
             Assert.That(engine.Rpm, Is.InRange(_player.Data.engineSound.idleRpm, _player.Data.engineSound.redlineRpm + 1f));
 
+            // Боты бьются между собой (это геймплей), поэтому одного выбитого допускаем.
+            int moving = 0;
             foreach (ArcadeCarController racer in _manager.Racers)
             {
                 if (racer == _player) continue;
                 var ai = racer.GetComponent<RacerAI>();
                 Debug.Log($"[Test] {racer.name} progress {ai.TotalDistance:0} m");
-                Assert.Greater(ai.TotalDistance, 100f, $"{racer.name} должен ехать по трассе");
+                if (ai.TotalDistance > 150f) moving++;
             }
+            Assert.GreaterOrEqual(moving, 4, "Минимум 4 из 5 ботов должны уверенно ехать по трассе");
         }
 
         [UnityTest]
@@ -168,9 +174,193 @@ namespace CarMonster.Tests
             Assert.AreEqual(1, _manager.TakedownCount);
             Assert.AreEqual(_manager.Balance.combat.takedownTimeBonus, bonus, 0.001f);
 
-            yield return WaitSeconds(_manager.Balance.timeAttack.respawnDelay + 0.5f);
-            Assert.IsFalse(victimTd.IsWrecked, "Через 3 секунды машина возвращается");
+            yield return WaitUntilReassembled(victimTd, _manager.Balance.timeAttack.respawnDelay + 6f);
+            Assert.IsFalse(victimTd.IsWrecked, "Машина должна сама собраться");
+            Assert.AreEqual(victimTd.MaxHealth, victimTd.Health);
             Assert.AreEqual(1f, Time.timeScale, 0.001f);
+        }
+
+        [UnityTest]
+        public IEnumerator Player_Crashes_Into_Wall_Reassembles_And_Drives_On()
+        {
+            yield return LoadRace("R35-GT");
+            ParkBotsAndPlaceTarget(null, 0f);
+            var td = _player.GetComponent<TakedownSystem>();
+            Transform p = _player.transform;
+
+            GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            wall.transform.SetPositionAndRotation(p.position + p.forward * 110f + Vector3.up * 2f, p.rotation);
+            wall.transform.localScale = new Vector3(40f, 6f, 2f);
+
+            var nitro = _player.GetComponent<NitroSystem>();
+            nitro.ResetCharge(nitro.Capacity);
+            _input.Set(1f, 0f, false);
+            yield return WaitSeconds(0.5f);
+            _input.TapNitro();
+
+            float timeout = 10f;
+            while (!td.IsWrecked && timeout > 0f)
+            {
+                timeout -= Time.unscaledDeltaTime;
+                yield return null;
+            }
+            Assert.IsTrue(td.IsWrecked, "Лобовой удар в стену на скорости уничтожает машину игрока");
+            Assert.IsNull(td.LastAttacker, "Краш в стену — без атакующего");
+            Assert.IsFalse(_player.ControlEnabled, "Разбитой машиной нельзя управлять");
+
+            bool sawReassembly = false;
+            timeout = _manager.Balance.timeAttack.respawnDelay + 6f;
+            while ((td.IsWrecked || td.IsReassembling) && timeout > 0f)
+            {
+                sawReassembly |= td.IsReassembling;
+                timeout -= Time.unscaledDeltaTime;
+                yield return null;
+            }
+            Assert.IsTrue(sawReassembly, "Должна быть анимация самосборки");
+            Assert.IsFalse(td.IsWrecked);
+            Assert.IsTrue(_player.ControlEnabled, "После сборки управление возвращается");
+            Assert.AreEqual(td.MaxHealth, td.Health);
+            yield return WaitSeconds(0.2f);
+            Debug.Log($"[Test] after reassembly speed {_player.SpeedKmh:0} km/h");
+            Assert.Greater(_player.SpeedKmh, 40f, "Машина продолжает гонку с разгона");
+            foreach (DetachablePart part in _player.GetComponentsInChildren<DetachablePart>(true))
+                Assert.IsFalse(part.IsDetached, $"{part.name} должна вернуться на место");
+            Object.Destroy(wall);
+        }
+
+        [UnityTest]
+        public IEnumerator BoostPad_Gives_Impulse_And_Nitro()
+        {
+            yield return LoadRace("R35-GT");
+            ParkBotsAndPlaceTarget(null, 0f);
+            BoostPad pad = Object.FindFirstObjectByType<BoostPad>();
+            Assert.IsNotNull(pad);
+            var nitro = _player.GetComponent<NitroSystem>();
+            nitro.ResetCharge(0f);
+
+            Transform t = pad.transform;
+            _player.Teleport(t.position - t.forward * 25f + Vector3.up * 0.6f, t.rotation);
+            _input.Set(1f, 0f, false);
+            float timeout = 6f;
+            while (pad.TriggerCount == 0 && timeout > 0f)
+            {
+                timeout -= Time.deltaTime;
+                yield return null;
+            }
+            Assert.Greater(pad.TriggerCount, 0, "Машина должна проехать через пад");
+            Assert.Greater(nitro.Charge, 0f, "Пад даёт нитро");
+        }
+
+        [UnityTest]
+        public IEnumerator Desert_Chasm_Can_Be_Jumped()
+        {
+            yield return LoadRace("SF90-V8", "Loc_DesertCanyon");
+            ParkBotsAndPlaceTarget(null, 0f);
+            WaypointCircuit circuit = _manager.Circuit;
+            float gapEnd = circuit.SkipGaps(_manager.Location.straightLength * _manager.Location.chasmAt) - 12f;
+            var nitro = _player.GetComponent<NitroSystem>();
+            nitro.ResetCharge(nitro.Capacity);
+            _input.Set(1f, 0f, false);
+
+            bool crossed = false;
+            bool respawned = false;
+            float timeout = 15f;
+            float nextNitro = 1f;
+            while (!crossed && timeout > 0f)
+            {
+                timeout -= Time.deltaTime;
+                nextNitro -= Time.deltaTime;
+                if (nextNitro <= 0f)
+                {
+                    _input.TapNitro();
+                    nextNitro = 1.9f;
+                }
+                respawned |= _manager.IsRespawning(_player);
+                float along = circuit.GetClosestDistance(_player.Body.position);
+                crossed = along > gapEnd + 25f && along < gapEnd + 300f && _player.Body.position.y > -2f;
+                yield return null;
+            }
+            Debug.Log($"[Test] chasm: crossed {crossed}, respawned {respawned}, speed {_player.SpeedKmh:0}");
+            Assert.IsTrue(crossed, "Пропасть должна перепрыгиваться");
+            Assert.IsFalse(respawned, "Без падения и самосборки");
+        }
+
+        /// <summary>
+        /// Фотограф для README: настоящие кадры краша и самосборки из игры.
+        /// Запуск: Unity -runTests -testPlatform PlayMode -testFilter Screenshot_Tour
+        /// </summary>
+        [UnityTest, Explicit, Category("Screenshots")]
+        public IEnumerator Screenshot_Tour()
+        {
+            yield return LoadRace("KNT-XV");
+            ArcadeCarController victim = ParkBotsAndPlaceTarget("SF90-V8", 30f);
+            var victimTd = victim.GetComponent<TakedownSystem>();
+            _player.SetControlEnabled(false);
+            yield return WaitSeconds(0.5f);
+
+            var cam = new GameObject("PhotoCam").AddComponent<Camera>();
+            cam.fieldOfView = 50f;
+            cam.farClipPlane = 2000f;
+            Camera main = Camera.main;
+            if (main != null)
+            {
+                cam.clearFlags = main.clearFlags;
+                cam.backgroundColor = main.backgroundColor;
+            }
+
+            victimTd.ReceiveHit(_player.GetComponent<TakedownSystem>(), 9999f, victim.transform.position, _player.transform.forward, true);
+            float t = 0f;
+            while (t < 0.22f)
+            {
+                t += Time.unscaledDeltaTime;
+                yield return null;
+            }
+            Photo(cam, victim.transform, "wreck.png");
+
+            float timeout = 12f;
+            while (!victimTd.IsReassembling && timeout > 0f)
+            {
+                timeout -= Time.unscaledDeltaTime;
+                yield return null;
+            }
+            yield return WaitSeconds(_manager.Balance.combat.reassembleMoveTime + 0.28f);
+            Photo(cam, victim.transform, "reassemble.png");
+            Object.Destroy(cam.gameObject);
+        }
+
+        private static void Photo(Camera cam, Transform target, string file)
+        {
+            Vector3 fwd = Vector3.ProjectOnPlane(target.forward, Vector3.up).normalized;
+            Vector3 right = Vector3.Cross(Vector3.up, fwd);
+            cam.transform.position = target.position + right * 9f - fwd * 5f + Vector3.up * 3.5f;
+            cam.transform.LookAt(target.position + Vector3.up * 0.8f);
+
+            const int w = 1600, h = 900;
+            var rt = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB) { antiAliasing = 8 };
+            cam.targetTexture = rt;
+            cam.Render();
+            cam.Render();
+            RenderTexture prev = RenderTexture.active;
+            RenderTexture.active = rt;
+            var tex = new Texture2D(w, h, TextureFormat.RGB24, false);
+            tex.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+            tex.Apply();
+            RenderTexture.active = prev;
+            string dir = System.IO.Path.Combine(Application.dataPath, "..", "Docs", "screenshots");
+            System.IO.Directory.CreateDirectory(dir);
+            System.IO.File.WriteAllBytes(System.IO.Path.Combine(dir, file), tex.EncodeToPNG());
+            cam.targetTexture = null;
+            Object.Destroy(tex);
+            rt.Release();
+        }
+
+        private static IEnumerator WaitUntilReassembled(TakedownSystem td, float timeout)
+        {
+            while ((td.IsWrecked || td.IsReassembling) && timeout > 0f)
+            {
+                timeout -= Time.unscaledDeltaTime;
+                yield return null;
+            }
         }
 
         [UnityTest]
@@ -280,13 +470,14 @@ namespace CarMonster.Tests
             {
                 if (racer == _player) continue;
                 racer.SetControlEnabled(false);
-                if (racer.Data.chassisCode == targetCode && target == null)
+                if (targetCode != null && racer.Data.chassisCode == targetCode && target == null)
                 {
                     target = racer;
                     continue;
                 }
-                racer.Teleport(new Vector3(600f + 20f * parked++, 1f, 0f), Quaternion.identity);
+                racer.Teleport(new Vector3(700f + 20f * parked++, 1f, 300f), Quaternion.identity);
             }
+            if (targetCode == null) return null;
             Assert.IsNotNull(target, $"Бот {targetCode} не найден");
             target.Teleport(p.position + p.forward * distance + Vector3.up * 0.3f, p.rotation * Quaternion.Euler(0f, 90f, 0f));
             return target;

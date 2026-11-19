@@ -90,16 +90,52 @@ namespace CarMonster.EditorTools
                 cam.transform.LookAt(p.position + p.forward * 24f + Vector3.up * 0.5f);
                 Render(cam, $"loc_{loc.sceneName.Replace("Loc_", "").ToLowerInvariant()}.png");
 
+                string shortId = loc.sceneName.Replace("Loc_", "").ToLowerInvariant();
+                float extX = loc.cornerRadius + loc.sBendAmplitude;
+                float extZ = loc.straightLength * 0.5f + loc.cornerRadius;
+                bool fogWas = RenderSettings.fog;
+                RenderSettings.fog = false;
+                cam.fieldOfView = 50f;
+                cam.transform.position = new Vector3(extX * 1.9f, Mathf.Max(extX, extZ) * 0.75f, -extZ * 1.15f);
+                cam.transform.LookAt(new Vector3(0f, 0f, extZ * 0.05f));
+                Render(cam, $"overview_{shortId}.png");
+                RenderSettings.fog = fogWas;
+
+                var circuit = Object.FindFirstObjectByType<WaypointCircuit>();
+                circuit.Rebuild();
+                float backStraight = loc.straightLength + Mathf.PI * loc.cornerRadius;
+                if (loc.tunnel)
+                {
+                    float d = backStraight + loc.straightLength * 0.2f - 35f;
+                    Vector3 eye = circuit.GetPoint(d) + Vector3.up * 4.5f;
+                    cam.fieldOfView = 60f;
+                    cam.transform.position = eye;
+                    cam.transform.LookAt(circuit.GetPoint(d + 45f) + Vector3.up * 2f);
+                    Render(cam, "tunnel.png");
+                }
+                if (loc.chasm)
+                {
+                    float g0 = loc.straightLength * loc.chasmAt;
+                    float zc = -loc.straightLength * 0.5f + g0 + loc.chasmLength * 0.5f;
+                    cam.fieldOfView = 55f;
+                    cam.transform.position = new Vector3(loc.cornerRadius + 38f, 14f, zc - 55f);
+                    cam.transform.LookAt(new Vector3(loc.cornerRadius, -6f, zc + 5f));
+                    Render(cam, "chasm.png");
+                }
+                {
+                    // Эстакада с виражом и отбойниками.
+                    float d = loc.straightLength + Mathf.PI * loc.cornerRadius * 0.55f;
+                    Vector3 op = circuit.GetPoint(d);
+                    Vector3 dir = circuit.GetDirection(d);
+                    Vector3 right = Vector3.Cross(Vector3.up, dir).normalized;
+                    cam.fieldOfView = 55f;
+                    cam.transform.position = op - dir * 45f - right * 35f + Vector3.up * 14f;
+                    cam.transform.LookAt(op + Vector3.up * 2f);
+                    Render(cam, $"overpass_{shortId}.png");
+                }
+
                 if (i == 0)
                 {
-                    bool fog = RenderSettings.fog;
-                    RenderSettings.fog = false;
-                    cam.fieldOfView = 50f;
-                    cam.transform.position = new Vector3(380f, 300f, -470f);
-                    cam.transform.LookAt(new Vector3(0f, 0f, 30f));
-                    Render(cam, "track_overview.png");
-                    RenderSettings.fog = fog;
-
                     GameObject hero = spawned[0];
                     foreach (string fx in new[] { "PerfectFire_0", "PerfectFire_1", "NitroFlame_0", "NitroFlame_1" })
                     {

@@ -267,6 +267,7 @@ namespace CarMonster
                         EndRace(false);
                     }
                     CheckFallenCars();
+                    CheckOffTrack();
                     break;
             }
         }
@@ -369,6 +370,7 @@ namespace CarMonster
         public void RequestRespawn(ArcadeCarController car, float delay)
         {
             if (car == null || _respawning.Contains(car)) return;
+            if (Debug.isDebugBuild) Debug.Log($"[CarMonster] respawn {car.name} at {car.Body.position}");
             _respawning.Add(car);
             StartCoroutine(RespawnRoutine(car, delay));
         }
@@ -382,16 +384,54 @@ namespace CarMonster
 
             if (car.TryGetComponent(out TakedownSystem td))
             {
-                td.Repair();
+                // Самосборка: обломки слетаются, машина продолжает гонку с разгона с того же места.
+                yield return td.Reassemble(position, rotation);
                 td.SetInvulnerable(balance.combat.respawnInvulnerability);
             }
-            car.Teleport(position, rotation);
+            else
+            {
+                car.Teleport(position, rotation);
+            }
+
+            if (car == null) yield break;
             car.SetControlEnabled(State == RaceState.Racing || (State == RaceState.TimeOver && car != Player));
             if (car.TryGetComponent(out RacerAI ai)) ai.ResetProgress();
+            ResetOffTrack(car);
 
             _respawning.Remove(car);
             CarRespawned?.Invoke(car);
         }
+
+        public bool IsRespawning(ArcadeCarController car) => _respawning.Contains(car);
+
+        // ---------- Off-track ----------
+
+        private readonly Dictionary<ArcadeCarController, float> _offTrackTime = new Dictionary<ArcadeCarController, float>();
+        private float _nextOffTrackCheck;
+        private const float OffTrackCheckInterval = 0.25f;
+
+        private void CheckOffTrack()
+        {
+            if (circuit == null || Time.time < _nextOffTrackCheck) return;
+            _nextOffTrackCheck = Time.time + OffTrackCheckInterval;
+            GameBalanceSO.TimeAttackTuning t = balance.timeAttack;
+
+            for (int i = 0; i < _racers.Count; i++)
+            {
+                ArcadeCarController car = _racers[i];
+                if (car == null || _respawning.Contains(car) || !car.ControlEnabled) continue;
+                if (car.TryGetComponent(out TakedownSystem td) && td.IsWrecked) continue;
+
+                circuit.DistanceToTrack(car.Body.position, out float lateral, out float below);
+                bool off = lateral > t.offTrackDistance || below > 6f;
+                _offTrackTime.TryGetValue(car, out float time);
+                time = off ? time + OffTrackCheckInterval : 0f;
+                _offTrackTime[car] = time;
+                if (time >= t.offTrackTime) RequestRespawn(car, 0f);
+            }
+        }
+
+        private void ResetOffTrack(ArcadeCarController car) => _offTrackTime[car] = 0f;
 
         private void GetRespawnPose(ArcadeCarController car, out Vector3 position, out Quaternion rotation)
         {
@@ -399,16 +439,13 @@ namespace CarMonster
 
             if (circuit != null && circuit.PointCount >= 2)
             {
-                float distance = circuit.GetClosestDistance(car.Body.position) - t.respawnBackOffset;
-                for (int attempt = 0; attempt < 6; attempt++)
+                float distance = circuit.SkipGaps(circuit.GetClosestDistance(car.Body.position) + t.respawnAheadOffset);
+                for (int attempt = 0; attempt < 10; attempt++)
                 {
                     position = circuit.GetPoint(distance) + Vector3.up * 1.2f;
-                    if (!IsBlocked(position, car) || attempt == 5)
-                    {
-                        rotation = Quaternion.LookRotation(circuit.GetDirection(distance), Vector3.up);
-                        return;
-                    }
-                    distance += 7f;
+                    rotation = Quaternion.LookRotation(circuit.GetDirection(distance), Vector3.up);
+                    if (!IsBlocked(position, rotation, car) || attempt == 9) return;
+                    distance = circuit.SkipGaps(distance + 6f);
                 }
             }
 
@@ -417,7 +454,11 @@ namespace CarMonster
             rotation = Quaternion.LookRotation(Vector3.ProjectOnPlane(fallback.forward, Vector3.up).normalized, Vector3.up);
         }
 
-        private bool IsBlocked(Vector3 position, ArcadeCarController self)
+        /// <summary>
+        /// Место занято: другая машина рядом или стена/блок в объёме кузова (дорога и земля не мешают —
+        /// коробка проверки висит над асфальтом).
+        /// </summary>
+        private bool IsBlocked(Vector3 position, Quaternion rotation, ArcadeCarController self)
         {
             int count = Physics.OverlapSphereNonAlloc(position, balance.timeAttack.respawnClearRadius, _blockBuffer,
                 respawnBlockMask, QueryTriggerInteraction.Ignore);
@@ -425,6 +466,17 @@ namespace CarMonster
             {
                 Rigidbody body = _blockBuffer[i].attachedRigidbody;
                 if (body != null && body != self.Body && body.TryGetComponent(out ArcadeCarController _)) return true;
+            }
+
+            count = Physics.OverlapBoxNonAlloc(position + rotation * Vector3.up * 0.9f, new Vector3(1.4f, 0.7f, 3.2f),
+                _blockBuffer, rotation, respawnBlockMask, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < count; i++)
+            {
+                Collider c = _blockBuffer[i];
+                Rigidbody body = c.attachedRigidbody;
+                if (body == self.Body) continue;
+                if (body != null && !body.isKinematic) continue; // реквизит и обломки разлетятся сами
+                return true;
             }
             return false;
         }

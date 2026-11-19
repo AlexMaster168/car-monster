@@ -97,6 +97,40 @@ namespace CarMonster
             _rb.centerOfMass = centerOfMass != null
                 ? transform.InverseTransformPoint(centerOfMass.position)
                 : centerOfMassOffset;
+            ApplyBodyMaterial();
+        }
+
+        private const float MaxSuspensionAccel = 40f;
+#if UNITY_6000_0_OR_NEWER
+        private static PhysicsMaterial _bodyMaterial;
+#else
+        private static PhysicMaterial _bodyMaterial;
+#endif
+
+        /// <summary>
+        /// Кузов почти скользкий: сцепление дают лучи колёс, а трение корпуса только крадёт скорость
+        /// при приземлениях и касаниях отбойников.
+        /// </summary>
+        private void ApplyBodyMaterial()
+        {
+            if (_bodyMaterial == null)
+            {
+#if UNITY_6000_0_OR_NEWER
+                _bodyMaterial = new PhysicsMaterial("CarBody")
+                {
+                    dynamicFriction = 0.05f, staticFriction = 0.05f, bounciness = 0f,
+                    frictionCombine = PhysicsMaterialCombine.Minimum, bounceCombine = PhysicsMaterialCombine.Minimum
+                };
+#else
+                _bodyMaterial = new PhysicMaterial("CarBody")
+                {
+                    dynamicFriction = 0.05f, staticFriction = 0.05f, bounciness = 0f,
+                    frictionCombine = PhysicMaterialCombine.Minimum, bounceCombine = PhysicMaterialCombine.Minimum
+                };
+#endif
+            }
+            foreach (Collider c in GetComponentsInChildren<Collider>(true))
+                if (!c.isTrigger && c.attachedRigidbody == _rb) c.sharedMaterial = _bodyMaterial;
         }
 
         public void SetData(CarDataSO newData)
@@ -131,6 +165,48 @@ namespace CarMonster
             _rb.AddForce(transform.forward * metersPerSecond, ForceMode.VelocityChange);
         }
 
+        public bool IsFrozen { get; private set; }
+
+        /// <summary>
+        /// «Заморозить» машину (кинематика, без своей физики) — для анимации самосборки.
+        /// Позицию в это время двигает тот, кто заморозил.
+        /// </summary>
+        public void SetFrozen(bool frozen)
+        {
+            if (IsFrozen == frozen) return;
+            IsFrozen = frozen;
+            if (frozen)
+            {
+                _rb.SetVelocity(Vector3.zero);
+                _rb.angularVelocity = Vector3.zero;
+                _rb.interpolation = RigidbodyInterpolation.None;
+                _rb.isKinematic = true;
+                // Собирающаяся машина — «призрак»: не должна быть невидимой стеной для гонщиков.
+                _rb.detectCollisions = false;
+                if (IsDrifting) EndDrift();
+            }
+            else
+            {
+                _rb.isKinematic = false;
+                _rb.detectCollisions = true;
+                _rb.interpolation = RigidbodyInterpolation.Interpolate;
+                AirTime = 0f;
+                _landingTimer = 0f;
+                _flipTimer = 0f;
+                _wasGrounded = true;
+            }
+        }
+
+        /// <summary>Поставить в позу и сразу дать скорость вдоль носа (машина «едет дальше»).</summary>
+        public void Launch(Vector3 position, Quaternion rotation, float forwardSpeedMs)
+        {
+            _rb.position = position;
+            _rb.rotation = rotation;
+            transform.SetPositionAndRotation(position, rotation);
+            _rb.SetVelocity(rotation * Vector3.forward * forwardSpeedMs);
+            _rb.angularVelocity = Vector3.zero;
+        }
+
         /// <summary>Телепорт с полным сбросом состояния (респавн).</summary>
         public void Teleport(Vector3 position, Quaternion rotation)
         {
@@ -154,6 +230,7 @@ namespace CarMonster
 
         private void FixedUpdate()
         {
+            if (IsFrozen) return;
             float dt = Time.fixedDeltaTime;
             ReadInput();
 
@@ -226,8 +303,10 @@ namespace CarMonster
                     float springLength = hit.distance - data.wheelRadius;
                     w.compression = 1f - Mathf.Clamp01(springLength / data.suspensionLength);
 
-                    float compressionVelocity = (w.compression - w.lastCompression) / dt;
-                    float accel = w.compression * data.springStrength + compressionVelocity * data.springDamper;
+                    // Ограничения не дают подвеске «выстрелить» машиной вверх при жёстком приземлении.
+                    float compressionVelocity = Mathf.Clamp((w.compression - w.lastCompression) / dt, -6f, 6f);
+                    float accel = Mathf.Min(w.compression * data.springStrength + compressionVelocity * data.springDamper,
+                        MaxSuspensionAccel);
                     if (accel > 0f)
                         _rb.AddForceAtPosition(up * (accel * massPerWheel), origin, ForceMode.Force);
 
@@ -389,10 +468,11 @@ namespace CarMonster
 
             _landingTimer = data.landingAlignTime;
 
-            // Гасим отскок вверх и «клевок» корпуса.
+            // Аркадное приземление: гасим и удар вниз (иначе кузов бьётся о дорогу и теряет скорость),
+            // и отскок вверх. Скорость вдоль дороги сохраняется полностью.
             Vector3 velocity = _rb.GetVelocity();
             float alongNormal = Vector3.Dot(velocity, GroundNormal);
-            if (alongNormal > 0f) velocity -= GroundNormal * (alongNormal * 0.8f);
+            velocity -= GroundNormal * (alongNormal * (alongNormal < 0f ? 0.85f : 0.8f));
             _rb.SetVelocity(velocity);
 
             Landed?.Invoke(air);

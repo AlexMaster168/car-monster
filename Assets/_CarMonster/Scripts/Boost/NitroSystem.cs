@@ -8,7 +8,8 @@ namespace CarMonster
         Drift,
         Airtime,
         NearMiss,
-        Takedown
+        Takedown,
+        BoostPad
     }
 
     /// <summary>

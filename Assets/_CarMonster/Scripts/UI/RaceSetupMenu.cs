@@ -42,6 +42,7 @@ namespace CarMonster
                     if (MenuInput.Up) SwitchLocation(-1);
                     if (MenuInput.Down) SwitchLocation(1);
                     if (MenuInput.Confirm) RaceOrBuy();
+                    if (MenuInput.Money) GiveMoney();
                     break;
 
                 case RaceState.Countdown:
@@ -86,6 +87,13 @@ namespace CarMonster
             }
             if (PlayerProfile.TryBuy(car)) Toast($"КУПЛЕНО: {car.displayName}!");
             else Toast($"Не хватает {car.price - PlayerProfile.Credits:N0} CR");
+        }
+
+        private void GiveMoney()
+        {
+            if (!manager.Balance.economy.showMoneyCheat) return;
+            PlayerProfile.AddCredits(manager.Balance.economy.moneyCheatAmount);
+            Toast($"+{manager.Balance.economy.moneyCheatAmount:N0} CR — гуляем!");
         }
 
         private void Restart()
@@ -160,7 +168,16 @@ namespace CarMonster
             float y = panel.y + 20f;
             GUI.Label(new Rect(x, y, 560f, 70f), "CAR MONSTER", _title);
             y += 70f;
-            GUI.Label(new Rect(x, y, 560f, 34f), $"<color=#7CFFB2>{PlayerProfile.Credits:N0} CR</color>", _mid);
+            GUI.Label(new Rect(x, y, 300f, 34f), $"<color=#7CFFB2>{PlayerProfile.Credits:N0} CR</color>", _mid);
+            if (manager.Balance.economy.showMoneyCheat)
+            {
+                Color prevBg = GUI.backgroundColor;
+                GUI.backgroundColor = new Color(0.3f, 1f, 0.45f);
+                if (GUI.Button(new Rect(x + 310f, y - 4f, 250f, 40f),
+                        $"+{manager.Balance.economy.moneyCheatAmount:N0} CR (M)", GuiKit.Button(18)))
+                    GiveMoney();
+                GUI.backgroundColor = prevBg;
+            }
             y += 50f;
 
             // Локация.

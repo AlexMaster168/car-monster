@@ -41,7 +41,10 @@ namespace CarMonster.EditorTools
             {
                 case "NeonCity":
                     l.displayName = "Neon City";
-                    l.description = "Ночной мегаполис: стадион-трасса между неоновыми башнями и S-связка на обратной прямой.";
+                    l.description = "Ночной мегаполис: неоновый тоннель, виражи, гребни-трамплины и эстакада над городом.";
+                    l.hillHeight = 12f; l.hillWaves = 2f; l.crestHeight = 2.6f; l.crestCount = 3; l.bankAngle = 12f;
+                    l.chasm = false; l.tunnel = true; l.boostPads = 6; l.propDensity = 1f;
+                    l.barrierColorA = new Color(1f, 0.2f, 0.85f); l.barrierColorB = new Color(0.15f, 0.15f, 0.22f);
                     l.decor = DecorStyle.CityTowers;
                     l.straightLength = 520f;
                     l.cornerRadius = 140f;
@@ -73,7 +76,10 @@ namespace CarMonster.EditorTools
 
                 case "DesertCanyon":
                     l.displayName = "Desert Canyon";
-                    l.description = "Раскалённый каньон: длинные прямые на максималку и волнистая обратная прямая между столовых гор.";
+                    l.description = "Раскалённый каньон: прыжок через пропасть на стартовой прямой, мост над ущельем и горбатые дюны.";
+                    l.hillHeight = 18f; l.hillWaves = 3f; l.crestHeight = 3.2f; l.crestCount = 4; l.bankAngle = 8f;
+                    l.chasm = true; l.chasmAt = 0.47f; l.chasmLength = 18f; l.tunnel = false; l.boostPads = 6; l.propDensity = 1.2f;
+                    l.barrierColorA = new Color(0.85f, 0.1f, 0.1f); l.barrierColorB = new Color(0.92f, 0.92f, 0.92f);
                     l.decor = DecorStyle.DesertMesas;
                     l.straightLength = 640f;
                     l.cornerRadius = 170f;
@@ -103,7 +109,10 @@ namespace CarMonster.EditorTools
 
                 default: // ArcticPort
                     l.displayName = "Arctic Port";
-                    l.description = "Ледяной порт: короткая техничная трасса среди контейнерных стен, две S-связки подряд.";
+                    l.description = "Ледяной порт: крутые виражи, две S-связки среди контейнеров и эстакада над доками.";
+                    l.hillHeight = 9f; l.hillWaves = 2.5f; l.crestHeight = 2.2f; l.crestCount = 2; l.bankAngle = 20f;
+                    l.chasm = false; l.tunnel = false; l.boostPads = 5; l.propDensity = 1.5f;
+                    l.barrierColorA = new Color(0.1f, 0.35f, 0.9f); l.barrierColorB = new Color(0.92f, 0.92f, 0.92f);
                     l.decor = DecorStyle.PortContainers;
                     l.straightLength = 430f;
                     l.cornerRadius = 115f;
